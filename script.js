@@ -18,9 +18,14 @@ const SITE = {
         "Türkçe parçaları ve remixleri elektronik müzikle buluştururken kendi orijinal işlerini de geliştiren MERTMERIC'in amacı, Türkçeye EDM kültüründe daha güçlü bir yer açmak."
     ],
     longBio: [
-        "MERTMERIC, Turkish Bounce, Hard Techno ve Hard Trance ekseninde üreten bir DJ, prodüktör ve müzisyen. 10 yılı aşkın müzik üretimi deneyimiyle Türkçeyi EDM ile birleştiren sound'u; yüksek tempo, sert elektronik dokular ve vokal odaklı yaklaşım üzerine kurulu.",
-        "Türkçe parçaları ve remixleri elektronik müzikle buluştururken kendi orijinal işlerini de geliştiren MERTMERIC'in amacı, Türkçeye EDM kültüründe daha güçlü bir yer açmak.",
-        "Sahne performanslarında yüksek enerjili geçişleri, sert kick yapılarını ve tanıdık Türkçe vokalleri modern kulüp estetiğiyle harmanlayan MERTMERIC; yayınladığı orijinal parçalar, remixler ve canlı setlerle hem dijital platformlarda hem de gece hayatında kendine özgü bir çizgi oluşturmaya devam ediyor."
+        "MERTMERIC, Türkçe müziğin kendine özgü karakterini sert elektronik sound'larla bir araya getiren bir DJ, prodüktör ve artist.",
+        "On yılı aşkın süredir müzik üreten MERTMERIC, son üç yıldır odağını elektronik müziğe yönelterek Turkish Bounce, Hard Techno ve Hard Trance arasında kendi müzikal kimliğini geliştiriyor. Üretimlerinde yüksek tempo, güçlü elektronik dokular ve vokallerin taşıdığı tanıdık duyguyu ön planda tutuyor.",
+        "“Pembe Mezarlık” ve “Değmesin Ellerimiz” gibi yüksek streamler yakalayan Türkçe parçalar üzerinden şekillenen remix yaklaşımının yanında “NOT LIKE THIS”, “MAMAKJUMP”, “Afraid of the Darkness” ve “HASSIKTIR” gibi orijinal çalışmalarıyla da kendi sound'unu ortaya koyuyor.",
+        "MERTMERIC için Türkçe müziği elektronik müziğe taşımak yalnızca bir remix meselesi değil; Türkçenin, yerel müzikal hafızanın ve elektronik müziğin aynı sahnede doğal bir şekilde var olabileceğini göstermek. Hedefi, bu yaklaşımı Türkiye'deki kulüp kültürünün ötesine taşıyarak uluslararası elektronik müzik kitlesiyle buluşturmak.",
+        "Yaratıcı yaklaşımının merkezinde ise bir motto var: “Creating things you wish existed.” Var olanı tekrarlamak yerine, insanların duymak isteyip de ortada olmayan müziği üretmek.",
+        "\"Türkçe müziğin elektronik müzikte daha fazla yer bulması gerektiğine inanıyorum. Tanıdık vokallerin, Türkçenin kendine özgü karakterinin ve sert elektronik sound'ların bir araya geldiği bir alan yaratmak istiyorum.",
+        "Amacım yalnızca sevilen parçaları remixlemek değil; Türkçe müziği kulüp kültürünün doğal bir parçası hâline getirmek ve kendi orijinal üretimlerimle bu dünyaya katkıda bulunmak.",
+        "Benim için yaratıcılık, zaten var olanı tekrarlamak değil, eksikliğini hissettiğin şeyi üretmek.\""
     ],
     tracks: [],
     media: [],
@@ -88,10 +93,6 @@ const ICONS = {
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
-try {
-    localStorage.removeItem('mert_site_cache_v1');
-} catch (_) { }
-
 function detectMediaType(src, mime) {
     if (mime && mime.startsWith('video/')) return 'video';
     if (mime && mime.startsWith('image/')) return 'photo';
@@ -99,6 +100,29 @@ function detectMediaType(src, mime) {
     if (/\.(mp4|webm|mov|m4v)(\?.*)?$/i.test(s)) return 'video';
     return 'photo';
 }
+
+function applySettingsObject(s) {
+    if (!s) return;
+    SITE.lockImage = s.lock_image || SITE.lockImage || '';
+    SITE.logoImage = s.logo_image || s.overlay_gif || SITE.logoImage || '';
+
+    const cloudBg = s.bg_gif || s.bg_video || '';
+    if (cloudBg) {
+        if (detectMediaType(cloudBg) === 'video') {
+            SITE.bgVideo = cloudBg;
+            SITE.bgGif = '';
+        } else {
+            SITE.bgGif = cloudBg;
+            SITE.bgVideo = '';
+        }
+    }
+}
+
+try {
+    localStorage.removeItem('mert_site_cache_v1');
+    const cachedSettings = JSON.parse(localStorage.getItem('mert_cloud_settings_v2') || 'null');
+    if (cachedSettings) applySettingsObject(cachedSettings);
+} catch (_) { }
 
 const sb = window.supabase
     ? window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey)
@@ -110,14 +134,22 @@ let adminTab = 'media';
 async function syncFromSupabase() {
     if (!sb) return;
     try {
+        sb.from('site_settings').select('*').eq('id', 1).maybeSingle().then(({ data: settingsData }) => {
+            if (settingsData) {
+                applySettingsObject(settingsData);
+                try {
+                    localStorage.setItem('mert_cloud_settings_v2', JSON.stringify(settingsData));
+                } catch (_) { }
+                applyMedia();
+            }
+        });
+
         const [
-            { data: settingsData },
             { data: albumsData },
             { data: mediaData },
             { data: tracksData },
             { data: sessionRes }
         ] = await Promise.all([
-            sb.from('site_settings').select('*').eq('id', 1).maybeSingle(),
             sb.from('albums').select('*').order('created_at', { ascending: true }),
             sb.from('media_items').select('*').order('created_at', { ascending: false }),
             sb.from('tracks').select('*').order('created_at', { ascending: false }),
@@ -125,23 +157,6 @@ async function syncFromSupabase() {
         ]);
 
         adminSession = sessionRes?.session || null;
-
-        if (settingsData) {
-            SITE.lockImage = settingsData.lock_image || '';
-            SITE.logoImage = settingsData.logo_image || settingsData.overlay_gif || '';
-
-            const cloudBg = settingsData.bg_gif || settingsData.bg_video || '';
-            if (!cloudBg) {
-                SITE.bgGif = '';
-                SITE.bgVideo = '';
-            } else if (detectMediaType(cloudBg) === 'video') {
-                SITE.bgVideo = cloudBg;
-                SITE.bgGif = '';
-            } else {
-                SITE.bgGif = cloudBg;
-                SITE.bgVideo = '';
-            }
-        }
 
         if (Array.isArray(albumsData)) SITE.albums = albumsData;
         if (Array.isArray(mediaData)) SITE.media = mediaData;
@@ -383,6 +398,12 @@ lock.addEventListener('pointerup', e => {
     if (y0 !== null && y0 - e.clientY > 35) unlock();
     y0 = null;
 });
+
+if (location.hash === '#hub') {
+    lock.style.transition = 'none';
+    unlock();
+    history.replaceState(null, '', location.pathname + location.search);
+}
 
 let photosTab = 'library';
 let activeAlbumId = null;
