@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>MERTMERIC</title>
+    <meta name="theme-color" content="#000000">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <section id="lock" aria-label="Lock screen">
+        <div id="lockWall"></div>
+        <div id="ldate"></div>
+        <div id="ltime"></div>
+        <div id="hint">
+            <svg viewBox="0 0 24 24">
+                <path d="M6 15l6-6 6 6" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <span>Swipe up to unlock</span>
+        </div>
+    </section>
+
+    <main id="desk">
+        <video id="bgv" autoplay muted loop playsinline></video>
+        <img id="bggif" alt="">
+        <div id="deskOverlay"></div>
+
+        <div id="bar">
+            <b id="bn"></b>
+            <span>Finder</span>
+            <span class="hide-sm">File</span>
+            <span class="hide-sm">Edit</span>
+            <span class="hide-sm">View</span>
+            <span class="hide-sm">Window</span>
+            <span class="sp"></span>
+            <div class="bar-right">
+                <svg viewBox="0 0 24 18" aria-hidden="true">
+                    <path
+                        d="M12 15.5l2.6-2.6a3.7 3.7 0 00-5.2 0zM6.3 9.8a8 8 0 0111.4 0l1.4-1.4a10 10 0 00-14.2 0zM2.5 6A13.4 13.4 0 0121.5 6l1.4-1.4a15.4 15.4 0 00-21.8 0z" />
+                </svg>
+                <svg viewBox="0 0 28 14" aria-hidden="true">
+                    <rect x=".5" y=".5" width="22" height="13" rx="3.5" fill="none" stroke="#fff" />
+                    <rect x="2" y="2" width="18" height="10" rx="2" />
+                    <rect x="24" y="4.5" width="2.5" height="5" rx="1" />
+                </svg>
+                <span id="bt"></span>
+            </div>
+        </div>
+
+        <section id="hub" aria-label="MertMeric Hub">
+            <div class="hub-card logo-box" id="logoBox">
+                <img id="hubLogoImg" alt="MERTMERIC" style="display:none">
+                <span id="hubLogoText">MERTMERIC</span>
+            </div>
+
+            <div class="hub-card bio-main-box" id="bioMainBox"></div>
+
+            <div class="hub-sub-row">
+                <a href="bio.html" class="hub-card sub-box bio-link-box" id="bioLinkBox">
+                    <span class="sub-box-label">bio</span>
+                    <div class="bio-link-body">
+                        <p>Detaylı biyografiyi okumak için tıklayın</p>
+                        <span class="bio-link-cta">Uzun Biyografi ↗</span>
+                    </div>
+                </a>
+
+                <div class="hub-card sub-box tracks-box" id="tracksBox">
+                    <div class="tracks-head">
+                        <span class="sub-box-label">tracks</span>
+                        <div class="tracks-nav">
+                            <button type="button" id="trkPrev" aria-label="Previous track">‹</button>
+                            <button type="button" id="trkNext" aria-label="Next track">›</button>
+                        </div>
+                    </div>
+                    <div class="track-player" id="trackPlayer"></div>
+                </div>
+            </div>
+        </section>
+
+        <div id="win"></div>
+        <nav id="dock" aria-label="Application Dock"></nav>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="script.js"></script>
+</body>
+
+</html>
+
+</html>

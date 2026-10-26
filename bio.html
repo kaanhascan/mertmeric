@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>MERTMERIC — Biyografi</title>
+    <meta name="theme-color" content="#000000">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="bio-page-body">
+    <video id="bioBgv" autoplay muted loop playsinline style="display:none"></video>
+    <img id="bggif" alt="" style="display:none">
+    <div id="deskOverlay"></div>
+
+    <div id="bar">
+        <a href="index.html" id="bn" style="text-decoration:none;color:#fff">mert</a>
+        <span>Biography</span>
+        <span class="sp"></span>
+        <div class="bar-right">
+            <a href="index.html" class="btn-pill active" style="pointer-events:auto;text-decoration:none;padding:3px 10px;font-size:11.5px">← Ana Sayfaya Dön</a>
+        </div>
+    </div>
+
+    <main class="bio-page-wrap">
+        <article class="hub-card bio-page-card">
+            <div class="bio-page-top">
+                <a href="index.html" class="bio-back-btn">‹ Geri Dön</a>
+                <span class="bio-badge">BIOGRAPHY</span>
+            </div>
+
+            <div class="bio-page-logo" id="bioPageLogo">
+                <img id="bioLogoImg" alt="MERTMERIC" style="display:none">
+                <h1 id="bioLogoText">MERTMERIC</h1>
+            </div>
+
+            <div class="bio-page-content" id="bioPageContent">
+                <p>MERTMERIC, Turkish Bounce, Hard Techno ve Hard Trance ekseninde üreten bir DJ, prodüktör ve müzisyen. 10 yılı aşkın müzik üretimi deneyimiyle Türkçeyi EDM ile birleştiren sound'u; yüksek tempo, sert elektronik dokular ve vokal odaklı yaklaşım üzerine kurulu.</p>
+                <p>Türkçe parçaları ve remixleri elektronik müzikle buluştururken kendi orijinal işlerini de geliştiren MERTMERIC'in amacı, Türkçeye EDM kültüründe daha güçlü bir yer açmak.</p>
+                <p>Sahne performanslarında yüksek enerjili geçişleri, sert kick yapılarını ve tanıdık Türkçe vokalleri modern kulüp estetiğiyle harmanlayan MERTMERIC; yayınladığı orijinal parçalar, resmi/bootleg remixler ve canlı setlerle hem dijital platformlarda hem de gece hayatında kendine özgü bir çizgi oluşturmaya devam ediyor.</p>
+            </div>
+
+            <div class="bio-page-footer">
+                <div>
+                    <small>Bookings & Management</small>
+                    <a href="mailto:keystance@outlook.com">keystance@outlook.com</a>
+                </div>
+                <div class="bio-page-links">
+                    <a href="https://www.instagram.com/mertmeric.7/" target="_blank" rel="noopener">Instagram ↗</a>
+                    <a href="https://soundcloud.com/mertmeric7" target="_blank" rel="noopener">SoundCloud ↗</a>
+                    <a href="https://open.spotify.com/intl-tr/artist/7AFLX94fKBZWjj0Mq9qQ3O?si=YJnObyGaTROUK6ynG6uHDA" target="_blank" rel="noopener">Spotify ↗</a>
+                    <a href="https://youtu.be/DXFqUtnAJLE?si=05i51MZduxPMkPzI" target="_blank" rel="noopener">YouTube ↗</a>
+                </div>
+            </div>
+        </article>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        (async function () {
+            const url = "https://gjbvypvyikrwicdfhler.supabase.co";
+            const anonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdqYnZ5cHZ5aWtyd2ljZGZobGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwMjI1MDksImV4cCI6MjEwODU5ODUwOX0.vVEDvyPbZauodNMPG8c_14yJiNqyIBTPmViKiYQJgsM";
+            if (!window.supabase) return;
+            try {
+                const sb = window.supabase.createClient(url, anonKey);
+                const { data } = await sb.from('site_settings').select('*').eq('id', 1).maybeSingle();
+                if (!data) return;
+
+                const logoUrl = data.logo_image || data.overlay_gif || '';
+                if (logoUrl) {
+                    const logoImg = document.getElementById('bioLogoImg');
+                    logoImg.src = logoUrl;
+                    logoImg.style.display = 'block';
+                    document.getElementById('bioLogoText').style.display = 'none';
+                }
+
+                const cloudBg = data.bg_gif || data.bg_video || '';
+                if (cloudBg) {
+                    const isVid = /\.(mp4|webm|mov|m4v)(\?.*)?$/i.test(cloudBg);
+                    if (isVid) {
+                        const v = document.getElementById('bioBgv');
+                        v.src = cloudBg;
+                        v.style.display = 'block';
+                    } else {
+                        const g = document.getElementById('bggif');
+                        g.src = cloudBg;
+                        g.style.display = 'block';
+                    }
+                }
+            } catch (_) { }
+        })();
+    </script>
+</body>
+
+</html>
+
+</html>
