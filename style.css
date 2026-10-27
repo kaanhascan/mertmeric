@@ -917,6 +917,31 @@ select {
     opacity: .85;
 }
 
+.photos-uncompressed-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    background: linear-gradient(145deg, rgba(255, 255, 255, .14), rgba(255, 255, 255, .04));
+    border: 1px solid rgba(255, 255, 255, .24);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .45),
+        0 4px 10px rgba(0, 0, 0, .35);
+    color: #fff;
+    font-size: 12.5px;
+    font-weight: 600;
+    text-decoration: none;
+    letter-spacing: -0.01em;
+    transition: background .18s ease, transform .18s ease, border-color .18s ease;
+}
+
+.photos-uncompressed-btn:hover {
+    background: linear-gradient(145deg, rgba(255, 255, 255, .24), rgba(255, 255, 255, .08));
+    border-color: rgba(255, 255, 255, .42);
+    transform: translateY(-1px);
+}
+
 .photos-scroll {
     flex: 1;
     overflow-y: auto;
@@ -1453,6 +1478,7 @@ select {
     background: linear-gradient(180deg, rgba(255, 255, 255, .22), transparent);
     border-radius: inherit;
     pointer-events: none;
+    z-index: 2;
 }
 
 .dock-item:hover .dock-ic {
@@ -1464,15 +1490,64 @@ select {
         inset 0 -1px 0 rgba(255, 255, 255, .2);
 }
 
-.dock-ic svg,
-.dock-ic img {
+.dock-ic svg {
     position: relative;
     z-index: 1;
     width: 36px;
     height: 36px;
-     object-fit: contain;
     display: block;
     filter: drop-shadow(0 2px 6px rgba(0, 0, 0, .35));
+}
+
+.dock-ic img {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    filter:
+        drop-shadow(0 -1px 0 rgba(255, 255, 255, .82))
+        drop-shadow(0 0 1.5px rgba(255, 255, 255, .55))
+        drop-shadow(0 0 12px rgba(135, 180, 255, .42))
+        drop-shadow(0 8px 16px rgba(0, 0, 0, .5));
+    transition: filter .2s ease;
+}
+
+.dock-item:hover .dock-ic img {
+    filter:
+        drop-shadow(0 -1.5px 0 rgba(255, 255, 255, .95))
+        drop-shadow(0 0 2px rgba(255, 255, 255, .75))
+        drop-shadow(0 0 18px rgba(150, 195, 255, .65))
+        drop-shadow(0 10px 20px rgba(0, 0, 0, .55));
+}
+
+.dock-ic.has-img,
+.dock-item:hover .dock-ic.has-img {
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: 0;
+    box-shadow: none;
+    border-radius: 0;
+    overflow: visible;
+}
+
+.dock-ic.has-img::before {
+    display: block;
+    inset: 0;
+    border-radius: 0;
+    -webkit-mask-image: var(--ic-mask);
+    mask-image: var(--ic-mask);
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+    background: linear-gradient(160deg, rgba(255, 255, 255, .42) 0%, rgba(255, 255, 255, .1) 38%, transparent 54%);
+    mix-blend-mode: screen;
+    z-index: 2;
 }
 
 .dock-lbl {
@@ -1853,10 +1928,14 @@ select.inp {
         border-radius: 10px;
     }
 
-    .dock-ic svg,
-    .dock-ic img {
+    .dock-ic svg {
         width: 22px;
         height: 22px;
+    }
+
+    .dock-ic img {
+        width: 100%;
+        height: 100%;
     }
 
     .dock-lbl {

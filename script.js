@@ -61,7 +61,8 @@ const SITE = {
         instagram: "https://www.instagram.com/mertmeric.7/",
         soundcloud: "https://soundcloud.com/mertmeric7",
         spotify: "https://open.spotify.com/intl-tr/artist/7AFLX94fKBZWjj0Mq9qQ3O?si=YJnObyGaTROUK6ynG6uHDA",
-        youtube: "https://youtu.be/DXFqUtnAJLE?si=05i51MZduxPMkPzI"
+        youtube: "https://youtu.be/DXFqUtnAJLE?si=05i51MZduxPMkPzI",
+        uncompressed: ""
     },
     dockIcons: {
         instagram: "",
@@ -177,10 +178,14 @@ function applySettingsObject(s) {
     if (typeof s.soundcloud_url === 'string' && s.soundcloud_url) SITE.links.soundcloud = s.soundcloud_url;
     if (typeof s.spotify_url === 'string' && s.spotify_url) SITE.links.spotify = s.spotify_url;
     if (typeof s.youtube_url === 'string' && s.youtube_url) SITE.links.youtube = s.youtube_url;
+    if (typeof s.uncompressed_url === 'string') SITE.links.uncompressed = s.uncompressed_url;
     if (s.dock_icons && typeof s.dock_icons === 'object') {
         ['instagram', 'soundcloud', 'spotify', 'youtube', 'photos', 'contact'].forEach(k => {
             if (typeof s.dock_icons[k] === 'string') SITE.dockIcons[k] = s.dock_icons[k];
         });
+        if (typeof s.dock_icons._uncompressed_url === 'string') {
+            SITE.links.uncompressed = s.dock_icons._uncompressed_url;
+        }
     }
 }
 
@@ -687,8 +692,10 @@ const APPS = {
                 `;
             }
 
+            const uncompressedHtml = `<a href="${esc(SITE.links.uncompressed || '#')}" ${SITE.links.uncompressed ? 'target="_blank" rel="noopener"' : ''} class="photos-uncompressed-btn">Uncompressed ↗</a>`;
+
             return `
-                <div class="photos-top">${headerHtml}</div>
+                <div class="photos-top">${headerHtml}${uncompressedHtml}</div>
                 <div class="photos-scroll">${bodyHtml}</div>
                 <div class="photos-tabs">
                     <button class="ptab ${photosTab === 'library' ? 'active' : ''}" data-tab="library">
@@ -941,6 +948,14 @@ const APPS = {
                     </div>
 
                     <div class="adm-sec">
+                        <h4>"Uncompressed" Link (Photos Sağ Üst)</h4>
+                        <div class="adm-row">
+                            <input class="inp" id="admMediaUncompUrl" value="${esc(SITE.links.uncompressed)}" placeholder="https://drive.google.com/..." style="flex:1">
+                            <button type="button" class="btn-pill active" id="admSaveUncompBtn">Save Link</button>
+                        </div>
+                    </div>
+
+                    <div class="adm-sec">
                         <h4>Cloud Media (${SITE.media.length} items)</h4>
                         <div style="max-height:200px;overflow-y:auto;padding-right:4px">
                             ${SITE.media.map((m, idx) => `
@@ -1143,6 +1158,8 @@ const APPS = {
                                 <input class="inp" id="admTxtSp" value="${esc(SITE.links.spotify)}">
                                 <label style="font-size:11.5px;color:rgba(255,255,255,.65)">YouTube URL</label>
                                 <input class="inp" id="admTxtYt" value="${esc(SITE.links.youtube)}">
+                                <label style="font-size:11.5px;color:rgba(255,255,255,.65)">Photos "Uncompressed" Link URL</label>
+                                <input class="inp" id="admTxtUncomp" value="${esc(SITE.links.uncompressed)}" placeholder="https://drive.google.com/...">
                             </div>
                         </div>
                     </div>
@@ -1277,6 +1294,20 @@ const APPS = {
                     await syncFromSupabase();
                 };
 
+                w.querySelector('#admSaveUncompBtn').onclick = async () => {
+                    const val = w.querySelector('#admMediaUncompUrl').value.trim();
+                    SITE.links.uncompressed = val;
+                    const btn = w.querySelector('#admSaveUncompBtn');
+                    btn.textContent = 'Saving...';
+                    await sb.from('site_settings').upsert({
+                        id: 1,
+                        dock_icons: { ...SITE.dockIcons, _uncompressed_url: SITE.links.uncompressed }
+                    }, { onConflict: 'id' });
+                    await syncFromSupabase();
+                    const b = w.querySelector('#admSaveUncompBtn');
+                    if (b) b.textContent = 'Saved ✓';
+                };
+
                 w.querySelectorAll('.adm-pin-btn').forEach(btn => {
                     btn.onclick = async () => {
                         const item = SITE.media[Number(btn.dataset.idx)];
@@ -1368,7 +1399,7 @@ const APPS = {
                         lock_image: SITE.lockImage,
                         bg_video: SITE.bgVideo,
                         bg_gif: SITE.bgGif,
-                        dock_icons: SITE.dockIcons
+                        dock_icons: { ...SITE.dockIcons, _uncompressed_url: SITE.links.uncompressed }
                     }, { onConflict: 'id' });
 
                     if (error) {
@@ -1509,6 +1540,7 @@ const APPS = {
                     SITE.links.soundcloud = w.querySelector('#admTxtSc').value.trim();
                     SITE.links.spotify = w.querySelector('#admTxtSp').value.trim();
                     SITE.links.youtube = w.querySelector('#admTxtYt').value.trim();
+                    SITE.links.uncompressed = w.querySelector('#admTxtUncomp').value.trim();
 
                     applyMedia();
                     buildDock();
@@ -1532,7 +1564,8 @@ const APPS = {
                         instagram_url: SITE.links.instagram,
                         soundcloud_url: SITE.links.soundcloud,
                         spotify_url: SITE.links.spotify,
-                        youtube_url: SITE.links.youtube
+                        youtube_url: SITE.links.youtube,
+                        dock_icons: { ...SITE.dockIcons, _uncompressed_url: SITE.links.uncompressed }
                     }, { onConflict: 'id' });
 
                     if (error) {
@@ -1585,8 +1618,11 @@ function buildDock() {
         const icContent = item.customIcon
             ? `<img src="${esc(item.customIcon)}" alt="${esc(item.title)}">`
             : item.icon;
+        const maskStyle = item.customIcon
+            ? ` style="--ic-mask: url(&quot;${esc(item.customIcon)}&quot;)"`
+            : '';
         el.innerHTML = `
-            <div class="dock-ic">${icContent}</div>
+            <div class="dock-ic ${item.customIcon ? 'has-img' : ''}"${maskStyle}>${icContent}</div>
             <span class="dock-lbl">${esc(item.title)}</span>
         `;
         dock.append(el);
