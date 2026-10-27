@@ -81,7 +81,7 @@
             </div>
 
             <div class="hub-sub-row">
-                <div class="hub-card sub-box tracks-box" id="tracksBox">
+                <div class="glass sub-box tracks-box" id="tracksBox">
                     <div class="tracks-head">
                         <span class="sub-box-label">tracks</span>
                         <div class="tracks-nav">
@@ -92,8 +92,8 @@
                     <div class="track-player" id="trackPlayer"></div>
                 </div>
 
-                <a href="bio.html" class="hub-card bio-mini-btn" id="bioLinkBox">
-                    Uzun Biyografi ↗
+                <a href="bio.html" class="glass bio-mini-btn" id="bioLinkBox">
+                    <span id="bioLinkTxt">Uzun Biyografi ↗</span>
                 </a>
             </div>
         </section>
@@ -101,6 +101,14 @@
         <div id="win"></div>
         <nav id="dock" aria-label="Application Dock"></nav>
     </main>
+
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+        <filter id="liquid" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+            <feTurbulence type="fractalNoise" baseFrequency="0.008 0.012" numOctaves="2" seed="4" result="noise" />
+            <feGaussianBlur in="noise" stdDeviation="2" result="smoothNoise" />
+            <feDisplacementMap in="SourceGraphic" in2="smoothNoise" scale="24" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+    </svg>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="script.js"></script>

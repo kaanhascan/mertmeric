@@ -319,7 +319,7 @@ function applyMedia() {
     const trkLbl = $('#tracksBox .sub-box-label');
     if (trkLbl) trkLbl.textContent = SITE.tracksTitle;
 
-    const bioBtn = $('#bioLinkBox');
+    const bioBtn = $('#bioLinkTxt') || $('#bioLinkBox');
     if (bioBtn) {
         bioBtn.textContent = SITE.lang === 'en' ? SITE.longBioBtnTextEn : SITE.longBioBtnText;
     }
