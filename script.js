@@ -542,28 +542,11 @@ function renderTrackWidget() {
     };
 }
 
-function syncLockClockSvg(t) {
-    const box = $('#ltime');
-    const clipTxt = $('#ltimeClipTxt');
-    const strokeTxt = $('#ltimeStrokeTxt');
-    if (!box || !clipTxt || !strokeTxt) return;
-    if (t !== undefined) {
-        clipTxt.textContent = t;
-        strokeTxt.textContent = t;
-    }
-    const w = box.clientWidth || 480;
-    const h = box.clientHeight || 112;
-    clipTxt.setAttribute('x', w / 2);
-    clipTxt.setAttribute('y', h / 2);
-    strokeTxt.setAttribute('x', w / 2);
-    strokeTxt.setAttribute('y', h / 2);
-}
-
 function tick() {
     const d = new Date();
     const L = SITE.locale;
     const t = d.toLocaleTimeString(L, { hour: 'numeric', minute: '2-digit', hour12: SITE.hour12 });
-    syncLockClockSvg(t);
+    $('#ltime').textContent = t;
     $('#ldate').textContent = d.toLocaleDateString(L, { weekday: 'long', month: 'long', day: 'numeric' });
     $('#bt').textContent = d.toLocaleDateString(L, { weekday: 'short', month: 'short', day: 'numeric' }) + "  " + t;
 }
@@ -1829,12 +1812,10 @@ $('#bn').addEventListener('click', () => {
 function updateViewportScale() {
     if (window.innerWidth <= 700) {
         document.documentElement.style.setProperty('--ui-scale', '1');
-        syncLockClockSvg();
         return;
     }
     const scale = Math.min(window.innerWidth / 1920, window.innerHeight / 955);
     document.documentElement.style.setProperty('--ui-scale', scale.toFixed(4));
-    syncLockClockSvg();
 }
 
 updateViewportScale();

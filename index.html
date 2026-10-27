@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <title>MERTMERIC</title>
+    <title>mertmeric</title>
     <meta name="theme-color" content="#000000">
     <link rel="stylesheet" href="style.css?v=3">
 </head>
@@ -13,35 +13,7 @@
     <section id="lock" aria-label="Lock screen">
         <div id="lockWall"></div>
         <div id="ldate"></div>
-        <div id="ltime" aria-label="Time">
-            <div class="ltime-glass-fill"></div>
-            <svg class="ltime-svg" aria-hidden="true">
-                <defs>
-                    <clipPath id="ltimeClip" clipPathUnits="userSpaceOnUse">
-                        <text id="ltimeClipTxt" text-anchor="middle" dominant-baseline="central"></text>
-                    </clipPath>
-                    <filter id="lgText" x="-10%" y="-25%" width="120%" height="150%" color-interpolation-filters="sRGB">
-                        <!-- Sol üst keskin spekülar rim (sadece kenarda, içini bulandırmaz) -->
-                        <feOffset in="SourceAlpha" dx="1.8" dy="2.2" result="offTL" />
-                        <feComposite in="SourceAlpha" in2="offTL" operator="out" result="rimTL" />
-                        <feFlood flood-color="#ffffff" flood-opacity="0.92" result="colTL" />
-                        <feComposite in="colTL" in2="rimTL" operator="in" result="specTL" />
-
-                        <!-- Sağ alt ince ikinci rim -->
-                        <feOffset in="SourceAlpha" dx="-1.4" dy="-1.8" result="offBR" />
-                        <feComposite in="SourceAlpha" in2="offBR" operator="out" result="rimBR" />
-                        <feFlood flood-color="#dbeafe" flood-opacity="0.5" result="colBR" />
-                        <feComposite in="colBR" in2="rimBR" operator="in" result="specBR" />
-
-                        <feMerge>
-                            <feMergeNode in="specBR" />
-                            <feMergeNode in="specTL" />
-                        </feMerge>
-                    </filter>
-                </defs>
-                <text id="ltimeStrokeTxt" text-anchor="middle" dominant-baseline="central"></text>
-            </svg>
-        </div>
+        <div id="ltime" aria-label="Time"></div>
         <div id="hint">
             <svg viewBox="0 0 24 24">
                 <path d="M6 15l6-6 6 6" stroke-linecap="round" stroke-linejoin="round" />
@@ -135,13 +107,16 @@
         <filter id="lgCard" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
             <feImage id="lgCardMap" x="0" y="0" width="560" height="200" preserveAspectRatio="none" result="map" />
 
-            <feDisplacementMap in="SourceGraphic" in2="map" scale="64" xChannelSelector="R" yChannelSelector="G" result="dR" />
+            <feDisplacementMap in="SourceGraphic" in2="map" scale="64" xChannelSelector="R" yChannelSelector="G"
+                result="dR" />
             <feColorMatrix in="dR" type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="cR" />
 
-            <feDisplacementMap in="SourceGraphic" in2="map" scale="56" xChannelSelector="R" yChannelSelector="G" result="dG" />
+            <feDisplacementMap in="SourceGraphic" in2="map" scale="56" xChannelSelector="R" yChannelSelector="G"
+                result="dG" />
             <feColorMatrix in="dG" type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" result="cG" />
 
-            <feDisplacementMap in="SourceGraphic" in2="map" scale="48" xChannelSelector="R" yChannelSelector="G" result="dB" />
+            <feDisplacementMap in="SourceGraphic" in2="map" scale="48" xChannelSelector="R" yChannelSelector="G"
+                result="dB" />
             <feColorMatrix in="dB" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" result="cB" />
 
             <feBlend in="cR" in2="cG" mode="screen" result="rg" />
