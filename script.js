@@ -9,9 +9,11 @@ const SITE = {
     name: "MERTMERIC",
     locale: "en-US",
     hour12: true,
+    lang: localStorage.getItem('site_lang') === 'en' ? 'en' : 'tr',
     unlockHint: "Swipe up to unlock",
     tracksTitle: "tracks",
     longBioBtnText: "Uzun Biyografi ↗",
+    longBioBtnTextEn: "Full Biography ↗",
     bioBackText: "‹ Geri Dön",
     bioBadgeText: "BIOGRAPHY",
     bioFooterLabel: "Bookings & Management",
@@ -19,20 +21,38 @@ const SITE = {
     lockImage: "",
     bgVideo: "",
     bgGif: "",
-    shortBio: [
-        "MERTMERIC, Turkish Bounce, Hard Techno ve Hard Trance ekseninde üreten bir DJ, prodüktör ve müzisyen. 10 yılı aşkın müzik üretimi deneyimiyle Türkçeyi EDM ile birleştiren sound'u; yüksek tempo, sert elektronik dokular ve vokal odaklı yaklaşım üzerine kurulu.",
-        "Türkçe parçaları ve remixleri elektronik müzikle buluştururken kendi orijinal işlerini de geliştiren MERTMERIC'in amacı, Türkçeye EDM kültüründe daha güçlü bir yer açmak."
-    ],
-    longBio: [
-        "MERTMERIC, Türkçe müziğin kendine özgü karakterini sert elektronik sound'larla bir araya getiren bir DJ, prodüktör ve artist.",
-        "On yılı aşkın süredir müzik üreten MERTMERIC, son üç yıldır odağını elektronik müziğe yönelterek Turkish Bounce, Hard Techno ve Hard Trance arasında kendi müzikal kimliğini geliştiriyor. Üretimlerinde yüksek tempo, güçlü elektronik dokular ve vokallerin taşıdığı tanıdık duyguyu ön planda tutuyor.",
-        "“Pembe Mezarlık” ve “Değmesin Ellerimiz” gibi yüksek streamler yakalayan Türkçe parçalar üzerinden şekillenen remix yaklaşımının yanında “NOT LIKE THIS”, “MAMAKJUMP”, “Afraid of the Darkness” ve “HASSIKTIR” gibi orijinal çalışmalarıyla da kendi sound'unu ortaya koyuyor.",
-        "MERTMERIC için Türkçe müziği elektronik müziğe taşımak yalnızca bir remix meselesi değil; Türkçenin, yerel müzikal hafızanın ve elektronik müziğin aynı sahnede doğal bir şekilde var olabileceğini göstermek. Hedefi, bu yaklaşımı Türkiye'deki kulüp kültürünün ötesine taşıyarak uluslararası elektronik müzik kitlesiyle buluşturmak.",
-        "Yaratıcı yaklaşımının merkezinde ise bir motto var: “Creating things you wish existed.” Var olanı tekrarlamak yerine, insanların duymak isteyip de ortada olmayan müziği üretmek.",
-        "\"Türkçe müziğin elektronik müzikte daha fazla yer bulması gerektiğine inanıyorum. Tanıdık vokallerin, Türkçenin kendine özgü karakterinin ve sert elektronik sound'ların bir araya geldiği bir alan yaratmak istiyorum.",
-        "Amacım yalnızca sevilen parçaları remixlemek değil; Türkçe müziği kulüp kültürünün doğal bir parçası hâline getirmek ve kendi orijinal üretimlerimle bu dünyaya katkıda bulunmak.",
-        "Benim için yaratıcılık, zaten var olanı tekrarlamak değil, eksikliğini hissettiğin şeyi üretmek.\""
-    ],
+    shortBio: {
+        tr: [
+            "MERTMERIC, Turkish Bounce, Hard Techno ve Hard Trance ekseninde üreten bir DJ, prodüktör ve müzisyen. 10 yılı aşkın müzik üretimi deneyimiyle Türkçeyi EDM ile birleştiren sound'u; yüksek tempo, sert elektronik dokular ve vokal odaklı yaklaşım üzerine kurulu.",
+            "Türkçe parçaları ve remixleri elektronik müzikle buluştururken kendi orijinal işlerini de geliştiren MERTMERIC'in amacı, Türkçeye EDM kültüründe daha güçlü bir yer açmak."
+        ],
+        en: [
+            "MERTMERIC is a DJ, producer and artist working across Turkish Bounce, Hard Techno and Hard Trance. With over a decade of music-making experience, his sound combines Turkish with high energy, hard-hitting electronic textures and vocal-driven arrangements.",
+            "Alongside Turkish tracks and remixes, MERTMERIC develops original productions with the aim of giving Turkish music a stronger presence within EDM culture."
+        ]
+    },
+    longBio: {
+        tr: [
+            "MERTMERIC, Türkçe müziğin kendine özgü karakterini sert elektronik sound'larla bir araya getiren bir DJ, prodüktör ve artist.",
+            "On yılı aşkın süredir müzik üreten MERTMERIC, son üç yıldır odağını elektronik müziğe yönelterek Turkish Bounce, Hard Techno ve Hard Trance arasında kendi müzikal kimliğini geliştiriyor. Üretimlerinde yüksek tempo, güçlü elektronik dokular ve vokallerin taşıdığı tanıdık duyguyu ön planda tutuyor.",
+            "“Pembe Mezarlık” ve “Değmesin Ellerimiz” gibi yüksek streamler yakalayan Türkçe parçalar üzerinden şekillenen remix yaklaşımının yanında “NOT LIKE THIS”, “MAMAKJUMP”, “Afraid of the Darkness” ve “HASSIKTIR” gibi orijinal çalışmalarıyla da kendi sound'unu ortaya koyuyor.",
+            "MERTMERIC için Türkçe müziği elektronik müziğe taşımak yalnızca bir remix meselesi değil; Türkçenin, yerel müzikal hafızanın ve elektronik müziğin aynı sahnede doğal bir şekilde var olabileceğini göstermek. Hedefi, bu yaklaşımı Türkiye'deki kulüp kültürünün ötesine taşıyarak uluslararası elektronik müzik kitlesiyle buluşturmak.",
+            "Yaratıcı yaklaşımının merkezinde ise bir motto var: “Creating things you wish existed.” Var olanı tekrarlamak yerine, insanların duymak isteyip de ortada olmayan müziği üretmek.",
+            "\"Türkçe müziğin elektronik müzikte daha fazla yer bulması gerektiğine inanıyorum. Tanıdık vokallerin, Türkçenin kendine özgü karakterinin ve sert elektronik sound'ların bir araya geldiği bir alan yaratmak istiyorum.",
+            "Amacım yalnızca sevilen parçaları remixlemek değil; Türkçe müziği kulüp kültürünün doğal bir parçası hâline getirmek ve kendi orijinal üretimlerimle bu dünyaya katkıda bulunmak.",
+            "Benim için yaratıcılık, zaten var olanı tekrarlamak değil, eksikliğini hissettiğin şeyi üretmek.\""
+        ],
+        en: [
+            "MERTMERIC is a DJ, producer and artist bringing the character of Turkish music into harder electronic territory.",
+            "With over ten years of music-making experience and three years dedicated to electronic music, he is developing a sound across Turkish Bounce, Hard Techno and Hard Trance. His productions are driven by high energy, hard-hitting textures and the familiarity of vocal-led music.",
+            "His work spans Turkish-language remixes and original productions, including “Pembe Mezarlık,” “Değmesin Ellerimiz,” “Mamakjump,” “NOT LIKE THIS,” “Afraid of the Darkness” and “HASSIKTIR.” Together, these projects reflect two sides of his approach: reimagining familiar Turkish music through electronic sounds and creating original material on his own terms.",
+            "For MERTMERIC, bringing Turkish music into EDM is about more than remixing existing songs. It is about creating space for the Turkish language and its musical identity within contemporary electronic music, connecting local familiarity with the energy of club culture.",
+            "His philosophy is straightforward: “Creating things you wish existed.” Rather than reproducing what is already out there, he aims to make the music people want to hear but can’t because it simply does not exist.",
+            "\"I believe Turkish music deserves a stronger presence in electronic music. I want to create a space where the familiarity of Turkish vocals and the character of the language meet hard-hitting electronic sounds.",
+            "My goal is not just to remix recognizable tracks, but to make Turkish music feel at home in club culture while contributing to that space through original productions of my own.",
+            "To me, creativity means making what you feel is missing rather than repeating what already exists.\""
+        ]
+    },
     tracks: [],
     media: [],
     albums: [],
@@ -131,8 +151,19 @@ function applySettingsObject(s) {
     if (typeof s.bio_back_text === 'string' && s.bio_back_text) SITE.bioBackText = s.bio_back_text;
     if (typeof s.bio_badge_text === 'string' && s.bio_badge_text) SITE.bioBadgeText = s.bio_badge_text;
     if (typeof s.bio_footer_label === 'string' && s.bio_footer_label) SITE.bioFooterLabel = s.bio_footer_label;
-    if (Array.isArray(s.short_bio) && s.short_bio.length) SITE.shortBio = s.short_bio;
-    if (Array.isArray(s.long_bio) && s.long_bio.length) SITE.longBio = s.long_bio;
+    if (Array.isArray(s.short_bio) && s.short_bio.length) {
+        SITE.shortBio.tr = s.short_bio;
+    } else if (s.short_bio && typeof s.short_bio === 'object') {
+        if (Array.isArray(s.short_bio.tr) && s.short_bio.tr.length) SITE.shortBio.tr = s.short_bio.tr;
+        if (Array.isArray(s.short_bio.en) && s.short_bio.en.length) SITE.shortBio.en = s.short_bio.en;
+    }
+
+    if (Array.isArray(s.long_bio) && s.long_bio.length) {
+        SITE.longBio.tr = s.long_bio;
+    } else if (s.long_bio && typeof s.long_bio === 'object') {
+        if (Array.isArray(s.long_bio.tr) && s.long_bio.tr.length) SITE.longBio.tr = s.long_bio.tr;
+        if (Array.isArray(s.long_bio.en) && s.long_bio.en.length) SITE.longBio.en = s.long_bio.en;
+    }
     if (typeof s.email === 'string' && s.email) SITE.email = s.email;
     if (typeof s.instagram_url === 'string' && s.instagram_url) SITE.links.instagram = s.instagram_url;
     if (typeof s.soundcloud_url === 'string' && s.soundcloud_url) SITE.links.soundcloud = s.soundcloud_url;
@@ -277,17 +308,32 @@ function applyMedia() {
 
     const bioMain = $('#bioMainBox');
     if (bioMain) {
-        bioMain.innerHTML = SITE.shortBio.map(p => `<p>${esc(p)}</p>`).join('');
+        const list = SITE.shortBio[SITE.lang] || SITE.shortBio.tr;
+        bioMain.innerHTML = list.map(p => `<p>${esc(p)}</p>`).join('');
     }
+
+    document.querySelectorAll('#hubLangSwitch .lang-flag-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.lang === SITE.lang);
+    });
 
     const trkLbl = $('#tracksBox .sub-box-label');
     if (trkLbl) trkLbl.textContent = SITE.tracksTitle;
 
     const bioBtn = $('#bioLinkBox');
-    if (bioBtn) bioBtn.textContent = SITE.longBioBtnText;
+    if (bioBtn) {
+        bioBtn.textContent = SITE.lang === 'en' ? SITE.longBioBtnTextEn : SITE.longBioBtnText;
+    }
 
     renderTrackWidget();
 }
+
+document.querySelectorAll('#hubLangSwitch .lang-flag-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        SITE.lang = btn.dataset.lang === 'en' ? 'en' : 'tr';
+        try { localStorage.setItem('mert_lang', SITE.lang); } catch (_) { }
+        applyMedia();
+    });
+});
 
 let currentTrackIdx = 0;
 let trackVolume = 0.5;
@@ -1000,15 +1046,17 @@ const APPS = {
                         <div class="adm-sec">
                             <h4>2. Ana Sayfa Yazıları</h4>
                             <div class="form-group">
-                                <label style="font-size:11.5px;color:rgba(255,255,255,.65)">Kısa Biyografi (Her satır ayrı paragraf olur)</label>
-                                <textarea class="inp" id="admTxtShortBio" rows="4">${esc(SITE.shortBio.join('\n\n'))}</textarea>
+                                <label style="font-size:11.5px;color:rgba(255,255,255,.65)">Kısa Biyografi — Türkçe (Her satır ayrı paragraf)</label>
+                                <textarea class="inp" id="admTxtShortBioTr" rows="3">${esc(SITE.shortBio.tr.join('\n\n'))}</textarea>
+                                <label style="font-size:11.5px;color:rgba(255,255,255,.65)">Kısa Biyografi — İngilizce (Her satır ayrı paragraf)</label>
+                                <textarea class="inp" id="admTxtShortBioEn" rows="3">${esc(SITE.shortBio.en.join('\n\n'))}</textarea>
                                 <div class="adm-row">
                                     <div style="flex:1">
                                         <label style="font-size:11.5px;color:rgba(255,255,255,.65);display:block;margin-bottom:4px">Tracks Kutusu Başlığı</label>
                                         <input class="inp" id="admTxtTrkTitle" value="${esc(SITE.tracksTitle)}">
                                     </div>
                                     <div style="flex:1">
-                                        <label style="font-size:11.5px;color:rgba(255,255,255,.65);display:block;margin-bottom:4px">Uzun Biyografi Buton Yazısı</label>
+                                        <label style="font-size:11.5px;color:rgba(255,255,255,.65);display:block;margin-bottom:4px">Uzun Biyografi Butonu (TR)</label>
                                         <input class="inp" id="admTxtBioBtn" value="${esc(SITE.longBioBtnText)}">
                                     </div>
                                 </div>
@@ -1018,11 +1066,13 @@ const APPS = {
                         <div class="adm-sec">
                             <h4>3. Uzun Biyografi Sayfası (bio.html)</h4>
                             <div class="form-group">
-                                <label style="font-size:11.5px;color:rgba(255,255,255,.65)">Uzun Biyografi Metni (Her satır ayrı paragraf olur)</label>
-                                <textarea class="inp" id="admTxtLongBio" rows="8">${esc(SITE.longBio.join('\n\n'))}</textarea>
+                                <label style="font-size:11.5px;color:rgba(255,255,255,.65)">Uzun Biyografi — Türkçe (Her satır ayrı paragraf)</label>
+                                <textarea class="inp" id="admTxtLongBioTr" rows="6">${esc(SITE.longBio.tr.join('\n\n'))}</textarea>
+                                <label style="font-size:11.5px;color:rgba(255,255,255,.65)">Uzun Biyografi — İngilizce (Her satır ayrı paragraf)</label>
+                                <textarea class="inp" id="admTxtLongBioEn" rows="6">${esc(SITE.longBio.en.join('\n\n'))}</textarea>
                                 <div class="adm-row">
                                     <div style="flex:1">
-                                        <label style="font-size:11.5px;color:rgba(255,255,255,.65);display:block;margin-bottom:4px">Geri Dön Butonu</label>
+                                        <label style="font-size:11.5px;color:rgba(255,255,255,.65);display:block;margin-bottom:4px">Geri Dön Butonu (TR)</label>
                                         <input class="inp" id="admTxtBioBack" value="${esc(SITE.bioBackText)}">
                                     </div>
                                     <div style="flex:1">
@@ -1358,17 +1408,29 @@ const APPS = {
                     SITE.bioBadgeText = w.querySelector('#admTxtBioBadge').value.trim() || 'BIOGRAPHY';
                     SITE.bioFooterLabel = w.querySelector('#admTxtBioFoot').value.trim() || 'Bookings & Management';
 
-                    const shortArr = w.querySelector('#admTxtShortBio').value
+                    const shortTr = w.querySelector('#admTxtShortBioTr').value
                         .split(/\n+/)
                         .map(s => s.trim())
                         .filter(Boolean);
-                    if (shortArr.length) SITE.shortBio = shortArr;
+                    if (shortTr.length) SITE.shortBio.tr = shortTr;
 
-                    const longArr = w.querySelector('#admTxtLongBio').value
+                    const shortEn = w.querySelector('#admTxtShortBioEn').value
                         .split(/\n+/)
                         .map(s => s.trim())
                         .filter(Boolean);
-                    if (longArr.length) SITE.longBio = longArr;
+                    if (shortEn.length) SITE.shortBio.en = shortEn;
+
+                    const longTr = w.querySelector('#admTxtLongBioTr').value
+                        .split(/\n+/)
+                        .map(s => s.trim())
+                        .filter(Boolean);
+                    if (longTr.length) SITE.longBio.tr = longTr;
+
+                    const longEn = w.querySelector('#admTxtLongBioEn').value
+                        .split(/\n+/)
+                        .map(s => s.trim())
+                        .filter(Boolean);
+                    if (longEn.length) SITE.longBio.en = longEn;
 
                     SITE.email = w.querySelector('#admTxtEmail').value.trim();
                     SITE.links.instagram = w.querySelector('#admTxtIg').value.trim();
