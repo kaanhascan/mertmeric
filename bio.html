@@ -75,6 +75,17 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
+        function updateViewportScale() {
+            if (window.innerWidth <= 700) {
+                document.documentElement.style.setProperty('--ui-scale', '1');
+                return;
+            }
+            const scale = Math.min(window.innerWidth / 1920, window.innerHeight / 955);
+            document.documentElement.style.setProperty('--ui-scale', scale.toFixed(4));
+        }
+        updateViewportScale();
+        window.addEventListener('resize', updateViewportScale);
+
         (async function () {
             const url = "https://gjbvypvyikrwicdfhler.supabase.co";
             const anonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdqYnZ5cHZ5aWtyd2ljZGZobGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwMjI1MDksImV4cCI6MjEwODU5ODUwOX0.vVEDvyPbZauodNMPG8c_14yJiNqyIBTPmViKiYQJgsM";

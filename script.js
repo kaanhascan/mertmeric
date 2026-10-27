@@ -1382,6 +1382,18 @@ $('#bn').addEventListener('click', () => {
     }
 });
 
+function updateViewportScale() {
+    if (window.innerWidth <= 700) {
+        document.documentElement.style.setProperty('--ui-scale', '1');
+        return;
+    }
+    const scale = Math.min(window.innerWidth / 1920, window.innerHeight / 955);
+    document.documentElement.style.setProperty('--ui-scale', scale.toFixed(4));
+}
+
+updateViewportScale();
+addEventListener('resize', updateViewportScale);
+
 applyMedia();
 syncFromSupabase();
 buildDock();
