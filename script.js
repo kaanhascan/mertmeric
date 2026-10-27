@@ -5,7 +5,7 @@ const SUPABASE_CONFIG = {
 };
 
 const SITE = {
-    brand: "mert",
+    brand: "mertmeric",
     name: "mertmeric",
     locale: "en-US",
     hour12: true,
