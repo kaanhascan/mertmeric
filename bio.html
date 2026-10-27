@@ -24,7 +24,30 @@
         <article class="hub-card bio-page-card">
             <div class="bio-page-top">
                 <a href="index.html#hub" class="bio-back-btn">‹ Geri Dön</a>
-                <span class="bio-badge">BIOGRAPHY</span>
+                <div style="display:flex;align-items:center;gap:12px">
+                    <span class="bio-badge">BIOGRAPHY</span>
+                    <div class="bio-lang-switch" id="bioPageLangSwitch" aria-label="Language Switcher">
+                        <button type="button" class="lang-flag-btn" data-lang="tr" title="Türkçe">
+                            <svg viewBox="0 0 36 24" aria-hidden="true">
+                                <rect width="36" height="24" rx="3" fill="#E30A17" />
+                                <circle cx="15" cy="12" r="6" fill="#fff" />
+                                <circle cx="16.5" cy="12" r="4.8" fill="#E30A17" />
+                                <polygon points="20.2,12 24.5,13.4 21.8,9.8 21.8,14.2 24.5,10.6" fill="#fff" />
+                            </svg>
+                            <span>TR</span>
+                        </button>
+                        <button type="button" class="lang-flag-btn" data-lang="en" title="English">
+                            <svg viewBox="0 0 36 24" aria-hidden="true">
+                                <rect width="36" height="24" rx="3" fill="#012169" />
+                                <path d="M0,0 L36,24 M36,0 L0,24" stroke="#fff" stroke-width="4.5" />
+                                <path d="M0,0 L36,24 M36,0 L0,24" stroke="#C8102E" stroke-width="2.4" />
+                                <path d="M18,0 V24 M0,12 H36" stroke="#fff" stroke-width="7" />
+                                <path d="M18,0 V24 M0,12 H36" stroke="#C8102E" stroke-width="4" />
+                            </svg>
+                            <span>EN</span>
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <div class="bio-page-logo" id="bioPageLogo">
@@ -92,6 +115,57 @@
 
         const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
+        const BIO_STATE = {
+            lang: localStorage.getItem('mert_lang') === 'en' ? 'en' : 'tr',
+            backTr: "‹ Geri Dön",
+            backEn: "‹ Back",
+            longBio: {
+                tr: [
+                    "MERTMERIC, Türkçe müziğin kendine özgü karakterini sert elektronik sound'larla bir araya getiren bir DJ, prodüktör ve artist.",
+                    "On yılı aşkın süredir müzik üreten MERTMERIC, son üç yıldır odağını elektronik müziğe yönelterek Turkish Bounce, Hard Techno ve Hard Trance arasında kendi müzikal kimliğini geliştiriyor. Üretimlerinde yüksek tempo, güçlü elektronik dokular ve vokallerin taşıdığı tanıdık duyguyu ön planda tutuyor.",
+                    "“Pembe Mezarlık” ve “Değmesin Ellerimiz” gibi yüksek streamler yakalayan Türkçe parçalar üzerinden şekillenen remix yaklaşımının yanında “NOT LIKE THIS”, “MAMAKJUMP”, “Afraid of the Darkness” ve “HASSIKTIR” gibi orijinal çalışmalarıyla da kendi sound'unu ortaya koyuyor.",
+                    "MERTMERIC için Türkçe müziği elektronik müziğe taşımak yalnızca bir remix meselesi değil; Türkçenin, yerel müzikal hafızanın ve elektronik müziğin aynı sahnede doğal bir şekilde var olabileceğini göstermek. Hedefi, bu yaklaşımı Türkiye'deki kulüp kültürünün ötesine taşıyarak uluslararası elektronik müzik kitlesiyle buluşturmak.",
+                    "Yaratıcı yaklaşımının merkezinde ise bir motto var: “Creating things you wish existed.” Var olanı tekrarlamak yerine, insanların duymak isteyip de ortada olmayan müziği üretmek.",
+                    "\"Türkçe müziğin elektronik müzikte daha fazla yer bulması gerektiğine inanıyorum. Tanıdık vokallerin, Türkçenin kendine özgü karakterinin ve sert elektronik sound'ların bir araya geldiği bir alan yaratmak istiyorum.",
+                    "Amacım yalnızca sevilen parçaları remixlemek değil; Türkçe müziği kulüp kültürünün doğal bir parçası hâline getirmek ve kendi orijinal üretimlerimle bu dünyaya katkıda bulunmak.",
+                    "Benim için yaratıcılık, zaten var olanı tekrarlamak değil, eksikliğini hissettiğin şeyi üretmek.\""
+                ],
+                en: [
+                    "MERTMERIC is a DJ, producer and artist bringing the character of Turkish music into harder electronic territory.",
+                    "With over ten years of music-making experience and three years dedicated to electronic music, he is developing a sound across Turkish Bounce, Hard Techno and Hard Trance. His productions are driven by high energy, hard-hitting textures and the familiarity of vocal-led music.",
+                    "His work spans Turkish-language remixes and original productions, including “Pembe Mezarlık,” “Değmesin Ellerimiz,” “Mamakjump,” “NOT LIKE THIS,” “Afraid of the Darkness” and “HASSIKTIR.” Together, these projects reflect two sides of his approach: reimagining familiar Turkish music through electronic sounds and creating original material on his own terms.",
+                    "For MERTMERIC, bringing Turkish music into EDM is about more than remixing existing songs. It is about creating space for the Turkish language and its musical identity within contemporary electronic music, connecting local familiarity with the energy of club culture.",
+                    "His philosophy is straightforward: “Creating things you wish existed.” Rather than reproducing what is already out there, he aims to make the music people want to hear but can’t because it simply does not exist.",
+                    "\"I believe Turkish music deserves a stronger presence in electronic music. I want to create a space where the familiarity of Turkish vocals and the character of the language meet hard-hitting electronic sounds.",
+                    "My goal is not just to remix recognizable tracks, but to make Turkish music feel at home in club culture while contributing to that space through original productions of my own.",
+                    "To me, creativity means making what you feel is missing rather than repeating what already exists.\""
+                ]
+            }
+        };
+
+        function renderBioLang() {
+            const list = BIO_STATE.longBio[BIO_STATE.lang] || BIO_STATE.longBio.tr;
+            const contentEl = document.getElementById('bioPageContent');
+            if (contentEl && Array.isArray(list)) {
+                contentEl.innerHTML = list.map(p => `<p>${esc(p)}</p>`).join('');
+            }
+            const backBtn = document.querySelector('.bio-back-btn');
+            if (backBtn) {
+                backBtn.textContent = BIO_STATE.lang === 'en' ? BIO_STATE.backEn : BIO_STATE.backTr;
+            }
+            document.querySelectorAll('#bioPageLangSwitch .lang-flag-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.lang === BIO_STATE.lang);
+            });
+        }
+
+        document.querySelectorAll('#bioPageLangSwitch .lang-flag-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                BIO_STATE.lang = btn.dataset.lang === 'en' ? 'en' : 'tr';
+                try { localStorage.setItem('mert_lang', BIO_STATE.lang); } catch (_) { }
+                renderBioLang();
+            });
+        });
+
         function applyBioSettings(d) {
             if (!d || typeof d !== 'object') return;
             if (d.logo_image) {
@@ -121,10 +195,7 @@
                 const bn = document.getElementById('bn');
                 if (bn) bn.textContent = d.brand;
             }
-            if (d.bio_back_text) {
-                const backBtn = document.querySelector('.bio-back-btn');
-                if (backBtn) backBtn.textContent = d.bio_back_text;
-            }
+            if (d.bio_back_text) BIO_STATE.backTr = d.bio_back_text;
             if (d.bio_badge_text) {
                 const badge = document.querySelector('.bio-badge');
                 if (badge) badge.textContent = d.bio_badge_text;
@@ -134,10 +205,10 @@
                 if (footLbl) footLbl.textContent = d.bio_footer_label;
             }
             if (Array.isArray(d.long_bio) && d.long_bio.length) {
-                const contentEl = document.getElementById('bioPageContent');
-                if (contentEl) {
-                    contentEl.innerHTML = d.long_bio.map(p => `<p>${esc(p)}</p>`).join('');
-                }
+                BIO_STATE.longBio.tr = d.long_bio;
+            } else if (d.long_bio && typeof d.long_bio === 'object') {
+                if (Array.isArray(d.long_bio.tr) && d.long_bio.tr.length) BIO_STATE.longBio.tr = d.long_bio.tr;
+                if (Array.isArray(d.long_bio.en) && d.long_bio.en.length) BIO_STATE.longBio.en = d.long_bio.en;
             }
             if (d.email) {
                 const mailEl = document.getElementById('bioFooterMail');
@@ -150,7 +221,10 @@
             if (d.soundcloud_url) document.getElementById('bioLinkSc').href = d.soundcloud_url;
             if (d.spotify_url) document.getElementById('bioLinkSp').href = d.spotify_url;
             if (d.youtube_url) document.getElementById('bioLinkYt').href = d.youtube_url;
+            renderBioLang();
         }
+
+        renderBioLang();
 
         try {
             const cached = JSON.parse(localStorage.getItem('mert_cloud_settings_v2') || 'null');
