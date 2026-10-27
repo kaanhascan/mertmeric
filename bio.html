@@ -196,7 +196,7 @@
             if (!d || typeof d !== 'object') return;
             if (d.logo_image) {
                 const logoImg = document.getElementById('bioLogoImg');
-                logoImg.src = d.logo_image;
+                if (logoImg.getAttribute('src') !== d.logo_image) logoImg.src = d.logo_image;
                 logoImg.style.display = 'block';
                 document.getElementById('bioLogoText').style.display = 'none';
             }
@@ -205,11 +205,11 @@
                 const isVid = /\.(mp4|webm|mov|m4v)(\?.*)?$/i.test(cloudBg);
                 if (isVid) {
                     const v = document.getElementById('bioBgv');
-                    v.src = cloudBg;
+                    if (v.getAttribute('src') !== cloudBg) v.src = cloudBg;
                     v.style.display = 'block';
                 } else {
                     const g = document.getElementById('bggif');
-                    g.src = cloudBg;
+                    if (g.getAttribute('src') !== cloudBg) g.src = cloudBg;
                     g.style.display = 'block';
                 }
             }

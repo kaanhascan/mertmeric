@@ -301,22 +301,26 @@ function applyMedia() {
         v.style.display = 'none';
         v.pause();
     } else if (SITE.bgGif || detectMediaType(bgSrc) === 'photo') {
-        g.src = bgSrc;
+        if (g.getAttribute('src') !== bgSrc) g.src = bgSrc;
         g.style.display = 'block';
         v.style.display = 'none';
         v.pause();
     } else {
-        v.src = bgSrc;
+        if (v.getAttribute('src') !== bgSrc) {
+            v.src = bgSrc;
+            if (unlocked) v.play().catch(() => { });
+        } else if (unlocked && v.paused) {
+            v.play().catch(() => { });
+        }
         v.style.display = 'block';
         g.style.display = 'none';
-        if (unlocked) v.play().catch(() => { });
     }
 
     const logoImg = $('#hubLogoImg');
     const logoWrap = $('#logoImgWrap');
     const logoTxt = $('#hubLogoText');
     if (SITE.logoImage) {
-        logoImg.src = SITE.logoImage;
+        if (logoImg.getAttribute('src') !== SITE.logoImage) logoImg.src = SITE.logoImage;
         logoImg.style.display = 'block';
         if (logoWrap) {
             logoWrap.style.display = 'inline-flex';
