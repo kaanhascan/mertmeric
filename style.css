@@ -1464,11 +1464,13 @@ select {
         inset 0 -1px 0 rgba(255, 255, 255, .2);
 }
 
-.dock-ic svg {
+.dock-ic svg,
+.dock-ic img {
     position: relative;
     z-index: 1;
     width: 36px;
     height: 36px;
+     object-fit: contain;
     display: block;
     filter: drop-shadow(0 2px 6px rgba(0, 0, 0, .35));
 }
@@ -1851,7 +1853,8 @@ select.inp {
         border-radius: 10px;
     }
 
-    .dock-ic svg {
+    .dock-ic svg,
+    .dock-ic img {
         width: 22px;
         height: 22px;
     }

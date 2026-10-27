@@ -62,6 +62,14 @@ const SITE = {
         soundcloud: "https://soundcloud.com/mertmeric7",
         spotify: "https://open.spotify.com/intl-tr/artist/7AFLX94fKBZWjj0Mq9qQ3O?si=YJnObyGaTROUK6ynG6uHDA",
         youtube: "https://youtu.be/DXFqUtnAJLE?si=05i51MZduxPMkPzI"
+    },
+    dockIcons: {
+        instagram: "",
+        soundcloud: "",
+        spotify: "",
+        youtube: "",
+        photos: "",
+        contact: ""
     }
 };
 
@@ -169,6 +177,11 @@ function applySettingsObject(s) {
     if (typeof s.soundcloud_url === 'string' && s.soundcloud_url) SITE.links.soundcloud = s.soundcloud_url;
     if (typeof s.spotify_url === 'string' && s.spotify_url) SITE.links.spotify = s.spotify_url;
     if (typeof s.youtube_url === 'string' && s.youtube_url) SITE.links.youtube = s.youtube_url;
+    if (s.dock_icons && typeof s.dock_icons === 'object') {
+        ['instagram', 'soundcloud', 'spotify', 'youtube', 'photos', 'contact'].forEach(k => {
+            if (typeof s.dock_icons[k] === 'string') SITE.dockIcons[k] = s.dock_icons[k];
+        });
+    }
 }
 
 try {
@@ -989,37 +1002,61 @@ const APPS = {
                     </div>
                 `;
             } else if (adminTab === 'appearance') {
+                const dockKeys = [
+                    { k: 'instagram', label: 'Instagram' },
+                    { k: 'soundcloud', label: 'SoundCloud' },
+                    { k: 'spotify', label: 'Spotify' },
+                    { k: 'youtube', label: 'YouTube' },
+                    { k: 'photos', label: 'Photos' },
+                    { k: 'contact', label: 'Contact' }
+                ];
                 tabBody = `
-                    <div class="adm-sec">
-                        <h4>1. Top Box Logo Image</h4>
-                        <div class="adm-row">
-                            <input class="inp" id="admLogoUrl" value="${esc(SITE.logoImage)}" placeholder="Logo Image URL (Leave empty for text logo)" style="flex:1">
-                            <label class="btn-pill active" style="cursor:pointer">
-                                Upload Logo
-                                <input type="file" id="admLogoFile" accept="image/*" style="display:none">
-                            </label>
+                    <div style="max-height:420px;overflow-y:auto;padding-right:4px">
+                        <div class="adm-sec">
+                            <h4>1. Top Box Logo Image</h4>
+                            <div class="adm-row">
+                                <input class="inp" id="admLogoUrl" value="${esc(SITE.logoImage)}" placeholder="Logo Image URL (Leave empty for text logo)" style="flex:1">
+                                <label class="btn-pill active" style="cursor:pointer">
+                                    Upload Logo
+                                    <input type="file" id="admLogoFile" accept="image/*" style="display:none">
+                                </label>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="adm-sec">
-                        <h4>2. Lock Screen Photo</h4>
-                        <div class="adm-row">
-                            <input class="inp" id="admLockUrl" value="${esc(SITE.lockImage)}" style="flex:1">
-                            <label class="btn-pill active" style="cursor:pointer">
-                                Upload Photo
-                                <input type="file" id="admLockFile" accept="image/*" style="display:none">
-                            </label>
+                        <div class="adm-sec">
+                            <h4>2. Lock Screen Photo</h4>
+                            <div class="adm-row">
+                                <input class="inp" id="admLockUrl" value="${esc(SITE.lockImage)}" style="flex:1">
+                                <label class="btn-pill active" style="cursor:pointer">
+                                    Upload Photo
+                                    <input type="file" id="admLockFile" accept="image/*" style="display:none">
+                                </label>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="adm-sec">
-                        <h4>3. Desktop Background Video / GIF</h4>
-                        <div class="adm-row">
-                            <input class="inp" id="admBgUrl" value="${esc(SITE.bgGif || SITE.bgVideo)}" style="flex:1">
-                            <label class="btn-pill active" style="cursor:pointer">
-                                Upload Video/GIF
-                                <input type="file" id="admBgFile" accept="video/*,image/gif,image/*" style="display:none">
-                            </label>
+                        <div class="adm-sec">
+                            <h4>3. Desktop Background Video / GIF</h4>
+                            <div class="adm-row">
+                                <input class="inp" id="admBgUrl" value="${esc(SITE.bgGif || SITE.bgVideo)}" style="flex:1">
+                                <label class="btn-pill active" style="cursor:pointer">
+                                    Upload Video/GIF
+                                    <input type="file" id="admBgFile" accept="video/*,image/gif,image/*" style="display:none">
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="adm-sec">
+                            <h4>4. Alt Bar (Dock) İkonları (Boş bırakılırsa varsayılan ikon kullanılır)</h4>
+                            ${dockKeys.map(d => `
+                                <div class="adm-row" style="margin-bottom:6px">
+                                    <span style="width:82px;font-size:12px;color:rgba(255,255,255,.8)">${d.label}</span>
+                                    <input class="inp" data-dock-inp="${d.k}" value="${esc(SITE.dockIcons[d.k] || '')}" placeholder="Varsayılan SVG İkon" style="flex:1">
+                                    <label class="btn-pill active" style="cursor:pointer;white-space:nowrap">
+                                        Yükle
+                                        <input type="file" data-dock-file="${d.k}" accept="image/*" style="display:none">
+                                    </label>
+                                </div>
+                            `).join('')}
                         </div>
                     </div>
 
@@ -1323,14 +1360,21 @@ const APPS = {
                     statusEl.textContent = 'Saving settings...';
                     statusEl.classList.add('on');
                     applyMedia();
+                    buildDock();
 
-                    await sb.from('site_settings').upsert({
+                    const { error } = await sb.from('site_settings').upsert({
                         id: 1,
                         logo_image: SITE.logoImage,
                         lock_image: SITE.lockImage,
                         bg_video: SITE.bgVideo,
-                        bg_gif: SITE.bgGif
+                        bg_gif: SITE.bgGif,
+                        dock_icons: SITE.dockIcons
                     }, { onConflict: 'id' });
+
+                    if (error) {
+                        statusEl.textContent = 'Error: ' + error.message;
+                        return;
+                    }
 
                     await syncFromSupabase();
                     const s = w.querySelector('#admWallStatus');
@@ -1339,6 +1383,25 @@ const APPS = {
                         s.classList.add('on');
                     }
                 };
+
+                w.querySelectorAll('[data-dock-file]').forEach(inp => {
+                    inp.onchange = async e => {
+                        const f = e.target.files[0];
+                        const key = inp.dataset.dockFile;
+                        if (!f || !key) return;
+                        statusEl.textContent = `Uploading ${key} icon...`;
+                        statusEl.classList.add('on');
+                        try {
+                            const { publicUrl } = await uploadFileToSupabase(f, 'icons');
+                            SITE.dockIcons[key] = publicUrl;
+                            const textInp = w.querySelector(`[data-dock-inp="${key}"]`);
+                            if (textInp) textInp.value = publicUrl;
+                            await saveSettingsToCloud();
+                        } catch (err) {
+                            statusEl.textContent = 'Upload error: ' + err.message;
+                        }
+                    };
+                });
 
                 w.querySelector('#admLogoFile').onchange = async e => {
                     const f = e.target.files[0];
@@ -1399,6 +1462,9 @@ const APPS = {
                         SITE.bgGif = bgVal;
                         SITE.bgVideo = '';
                     }
+                    w.querySelectorAll('[data-dock-inp]').forEach(inp => {
+                        SITE.dockIcons[inp.dataset.dockInp] = inp.value.trim();
+                    });
                     await saveSettingsToCloud();
                 };
 
@@ -1492,12 +1558,12 @@ let winOffsetCounter = 0;
 
 function getDockItems() {
     return [
-        { id: 'instagram', title: 'Instagram', icon: ICONS.instagram, url: SITE.links.instagram },
-        { id: 'soundcloud', title: 'SoundCloud', icon: ICONS.soundcloud, url: SITE.links.soundcloud },
-        { id: 'spotify', title: 'Spotify', icon: ICONS.spotify, url: SITE.links.spotify },
-        { id: 'youtube', title: 'YouTube', icon: ICONS.youtube, url: SITE.links.youtube },
-        { id: 'photos', title: 'Photos', icon: ICONS.photos, app: 'photos' },
-        { id: 'contact', title: 'Contact', icon: ICONS.contact, url: `mailto:${SITE.email}` }
+        { id: 'instagram', title: 'Instagram', icon: ICONS.instagram, customIcon: SITE.dockIcons.instagram, url: SITE.links.instagram },
+        { id: 'soundcloud', title: 'SoundCloud', icon: ICONS.soundcloud, customIcon: SITE.dockIcons.soundcloud, url: SITE.links.soundcloud },
+        { id: 'spotify', title: 'Spotify', icon: ICONS.spotify, customIcon: SITE.dockIcons.spotify, url: SITE.links.spotify },
+        { id: 'youtube', title: 'YouTube', icon: ICONS.youtube, customIcon: SITE.dockIcons.youtube, url: SITE.links.youtube },
+        { id: 'photos', title: 'Photos', icon: ICONS.photos, customIcon: SITE.dockIcons.photos, app: 'photos' },
+        { id: 'contact', title: 'Contact', icon: ICONS.contact, customIcon: SITE.dockIcons.contact, url: `mailto:${SITE.email}` }
     ];
 }
 
@@ -1516,8 +1582,11 @@ function buildDock() {
             el.dataset.app = item.app;
             el.onclick = () => openApp(item.app);
         }
+        const icContent = item.customIcon
+            ? `<img src="${esc(item.customIcon)}" alt="${esc(item.title)}">`
+            : item.icon;
         el.innerHTML = `
-            <div class="dock-ic">${item.icon}</div>
+            <div class="dock-ic">${icContent}</div>
             <span class="dock-lbl">${esc(item.title)}</span>
         `;
         dock.append(el);
