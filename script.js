@@ -128,6 +128,51 @@ const ICONS = {
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
+function makeLiquidMap(w, h, r, bezel) {
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const ctx = c.getContext('2d');
+    const img = ctx.createImageData(w, h);
+    const hx = w / 2, hy = h / 2;
+    for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+            const px = x + .5 - hx, py = y + .5 - hy;
+            const qx = Math.abs(px) - (hx - r), qy = Math.abs(py) - (hy - r);
+            const outside = Math.hypot(Math.max(qx, 0), Math.max(qy, 0));
+            const dist = -(outside + Math.min(Math.max(qx, qy), 0) - r);
+            let nx = 0, ny = 0;
+            if (qx > 0 && qy > 0) {
+                const l = Math.hypot(qx, qy) || 1;
+                nx = qx / l * Math.sign(px); ny = qy / l * Math.sign(py);
+            } else if (qx > qy) nx = Math.sign(px);
+            else ny = Math.sign(py);
+            const t = Math.min(Math.max(dist / bezel, 0), 1);
+            const m = Math.pow(1 - t, 2.2);
+            const i = (y * w + x) * 4;
+            img.data[i] = 128 - nx * m * 127;
+            img.data[i + 1] = 128 - ny * m * 127;
+            img.data[i + 2] = 128;
+            img.data[i + 3] = 255;
+        }
+    }
+    ctx.putImageData(img, 0, 0);
+    return c.toDataURL();
+}
+
+function updateLiquidCard() {
+    const card = $('#tracksBox');
+    const fe = $('#lgCardMap');
+    if (!card || !fe) return;
+    const w = card.offsetWidth, h = card.offsetHeight;
+    if (!w || !h) return;
+    const r = parseFloat(getComputedStyle(card).borderTopLeftRadius) || 44;
+    const dataUrl = makeLiquidMap(w, h, r, 34);
+    fe.setAttribute('width', w);
+    fe.setAttribute('height', h);
+    fe.setAttribute('href', dataUrl);
+    fe.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', dataUrl);
+}
+
 function detectMediaType(src, mime) {
     if (mime && mime.startsWith('video/')) return 'video';
     if (mime && mime.startsWith('image/')) return 'photo';
@@ -377,10 +422,13 @@ trackAudio.addEventListener('timeupdate', () => {
         isTrackPlaying = false;
         updateTrackPlayUI();
     }
+    const t = Math.min(30, trackAudio.currentTime);
     const range = $('#trkRange');
     const timeEl = $('#trkTime');
-    if (range) range.value = Math.min(30, trackAudio.currentTime);
-    if (timeEl) timeEl.textContent = formatDuration(Math.min(30, trackAudio.currentTime));
+    const remEl = $('#trkRem');
+    if (range) { range.value = t; range.style.setProperty('--p', (t / 30 * 100) + '%'); }
+    if (timeEl) timeEl.textContent = formatDuration(t);
+    if (remEl) remEl.textContent = '-' + formatDuration(30 - t);
 });
 
 trackAudio.addEventListener('ended', () => {
@@ -417,6 +465,7 @@ function renderTrackWidget() {
         isTrackPlaying = false;
     }
 
+    const cur = Math.min(30, trackAudio.currentTime || 0);
     wrap.innerHTML = `
         <div class="trk-main">
             <img class="trk-cover" src="${esc(trk.cover)}" alt="${esc(trk.title)}">
@@ -424,11 +473,17 @@ function renderTrackWidget() {
                 <div class="trk-title" title="${esc(trk.title)}">${esc(trk.title)}</div>
                 <div class="trk-sub">30s Preview</div>
             </div>
-            <button type="button" class="trk-play-btn" id="trkPlayBtn" aria-label="Play or Pause"></button>
         </div>
-        <div class="trk-bar-wrap">
-            <input type="range" class="trk-range" id="trkRange" min="0" max="30" step="0.1" value="${Math.min(30, trackAudio.currentTime || 0)}">
-            <span class="trk-time" id="trkTime">${formatDuration(Math.min(30, trackAudio.currentTime || 0))}</span>
+
+        <div class="trk-prog">
+            <div class="trk-times">
+                <span id="trkTime">${formatDuration(cur)}</span>
+                <span id="trkRem">-${formatDuration(30 - cur)}</span>
+            </div>
+            <input type="range" class="trk-range" id="trkRange" min="0" max="30" step="0.1" value="${cur}" style="--p:${cur / 30 * 100}%">
+        </div>
+
+        <div class="trk-controls">
             <div class="trk-vol-wrap" title="Volume">
                 <svg class="trk-vol-ic" viewBox="0 0 24 24">
                     <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
@@ -436,6 +491,16 @@ function renderTrackWidget() {
                 </svg>
                 <input type="range" class="trk-vol-range" id="trkVolRange" min="0" max="1" step="0.01" value="${trackVolume}">
             </div>
+            <div class="trk-ctrl-mid">
+                <button type="button" class="trk-ctl" id="trkPrev" aria-label="Previous track">
+                    <svg viewBox="0 0 24 24"><rect x="5" y="5" width="3" height="14" rx="1"/><path d="M19 5.5v13a1 1 0 0 1-1.6.8l-9-6.5a1 1 0 0 1 0-1.6l9-6.5A1 1 0 0 1 19 5.5z"/></svg>
+                </button>
+                <button type="button" class="trk-ctl trk-play" id="trkPlayBtn" aria-label="Play or Pause"></button>
+                <button type="button" class="trk-ctl" id="trkNext" aria-label="Next track">
+                    <svg viewBox="0 0 24 24"><rect x="16" y="5" width="3" height="14" rx="1"/><path d="M5 5.5v13a1 1 0 0 0 1.6.8l9-6.5a1 1 0 0 0 0-1.6l-9-6.5A1 1 0 0 0 5 5.5z"/></svg>
+                </button>
+            </div>
+            <span></span>
         </div>
     `;
 
@@ -456,8 +521,19 @@ function renderTrackWidget() {
         }
     };
 
+    $('#trkPrev').onclick = () => {
+        currentTrackIdx = (currentTrackIdx - 1 + SITE.tracks.length) % SITE.tracks.length;
+        renderTrackWidget();
+    };
+    $('#trkNext').onclick = () => {
+        currentTrackIdx = (currentTrackIdx + 1) % SITE.tracks.length;
+        renderTrackWidget();
+    };
+
     $('#trkRange').oninput = e => {
-        trackAudio.currentTime = Math.min(30, Number(e.target.value));
+        const v = Math.min(30, Number(e.target.value));
+        trackAudio.currentTime = v;
+        e.target.style.setProperty('--p', (v / 30 * 100) + '%');
     };
 
     $('#trkVolRange').oninput = e => {
@@ -466,23 +542,28 @@ function renderTrackWidget() {
     };
 }
 
-$('#trkPrev')?.addEventListener('click', () => {
-    if (!SITE.tracks.length) return;
-    currentTrackIdx = (currentTrackIdx - 1 + SITE.tracks.length) % SITE.tracks.length;
-    renderTrackWidget();
-});
-
-$('#trkNext')?.addEventListener('click', () => {
-    if (!SITE.tracks.length) return;
-    currentTrackIdx = (currentTrackIdx + 1) % SITE.tracks.length;
-    renderTrackWidget();
-});
+function syncLockClockSvg(t) {
+    const box = $('#ltime');
+    const clipTxt = $('#ltimeClipTxt');
+    const strokeTxt = $('#ltimeStrokeTxt');
+    if (!box || !clipTxt || !strokeTxt) return;
+    if (t !== undefined) {
+        clipTxt.textContent = t;
+        strokeTxt.textContent = t;
+    }
+    const w = box.clientWidth || 480;
+    const h = box.clientHeight || 112;
+    clipTxt.setAttribute('x', w / 2);
+    clipTxt.setAttribute('y', h / 2);
+    strokeTxt.setAttribute('x', w / 2);
+    strokeTxt.setAttribute('y', h / 2);
+}
 
 function tick() {
     const d = new Date();
     const L = SITE.locale;
     const t = d.toLocaleTimeString(L, { hour: 'numeric', minute: '2-digit', hour12: SITE.hour12 });
-    $('#ltime').textContent = t;
+    syncLockClockSvg(t);
     $('#ldate').textContent = d.toLocaleDateString(L, { weekday: 'long', month: 'long', day: 'numeric' });
     $('#bt').textContent = d.toLocaleDateString(L, { weekday: 'short', month: 'short', day: 'numeric' }) + "  " + t;
 }
@@ -1748,10 +1829,12 @@ $('#bn').addEventListener('click', () => {
 function updateViewportScale() {
     if (window.innerWidth <= 700) {
         document.documentElement.style.setProperty('--ui-scale', '1');
+        syncLockClockSvg();
         return;
     }
     const scale = Math.min(window.innerWidth / 1920, window.innerHeight / 955);
     document.documentElement.style.setProperty('--ui-scale', scale.toFixed(4));
+    syncLockClockSvg();
 }
 
 updateViewportScale();
@@ -1761,3 +1844,7 @@ applyMedia();
 syncFromSupabase();
 buildDock();
 setInterval(tick, 10000);
+
+const tracksCardEl = $('#tracksBox');
+if (tracksCardEl && window.ResizeObserver) new ResizeObserver(updateLiquidCard).observe(tracksCardEl);
+updateLiquidCard();
