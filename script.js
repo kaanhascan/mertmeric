@@ -1497,7 +1497,7 @@ function getDockItems() {
         { id: 'spotify', title: 'Spotify', icon: ICONS.spotify, url: SITE.links.spotify },
         { id: 'youtube', title: 'YouTube', icon: ICONS.youtube, url: SITE.links.youtube },
         { id: 'photos', title: 'Photos', icon: ICONS.photos, app: 'photos' },
-        { id: 'contact', title: 'Contact', icon: ICONS.contact, app: 'contact' }
+        { id: 'contact', title: 'Contact', icon: ICONS.contact, url: `mailto:${SITE.email}` }
     ];
 }
 
@@ -1508,8 +1508,10 @@ function buildDock() {
         el.className = 'dock-item';
         if (item.url) {
             el.href = item.url;
-            el.target = '_blank';
-            el.rel = 'noopener';
+            if (!item.url.startsWith('mailto:')) {
+                el.target = '_blank';
+                el.rel = 'noopener';
+            }
         } else {
             el.dataset.app = item.app;
             el.onclick = () => openApp(item.app);
