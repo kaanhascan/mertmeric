@@ -9,6 +9,12 @@ const SITE = {
     name: "MERTMERIC",
     locale: "en-US",
     hour12: true,
+    unlockHint: "Swipe up to unlock",
+    tracksTitle: "tracks",
+    longBioBtnText: "Uzun Biyografi ↗",
+    bioBackText: "‹ Geri Dön",
+    bioBadgeText: "BIOGRAPHY",
+    bioFooterLabel: "Bookings & Management",
     logoImage: "",
     lockImage: "",
     bgVideo: "",
@@ -118,10 +124,47 @@ function applySettingsObject(s) {
     }
 }
 
+function applyTextsObject(t) {
+    if (!t || typeof t !== 'object') return;
+    if (typeof t.brand === 'string') SITE.brand = t.brand;
+    if (typeof t.name === 'string') SITE.name = t.name;
+    if (typeof t.unlockHint === 'string') SITE.unlockHint = t.unlockHint;
+    if (typeof t.tracksTitle === 'string') SITE.tracksTitle = t.tracksTitle;
+    if (typeof t.longBioBtnText === 'string') SITE.longBioBtnText = t.longBioBtnText;
+    if (typeof t.bioBackText === 'string') SITE.bioBackText = t.bioBackText;
+    if (typeof t.bioBadgeText === 'string') SITE.bioBadgeText = t.bioBadgeText;
+    if (typeof t.bioFooterLabel === 'string') SITE.bioFooterLabel = t.bioFooterLabel;
+    if (Array.isArray(t.shortBio) && t.shortBio.length) SITE.shortBio = t.shortBio;
+    if (Array.isArray(t.longBio) && t.longBio.length) SITE.longBio = t.longBio;
+    if (typeof t.email === 'string') SITE.email = t.email;
+    if (t.links && typeof t.links === 'object') {
+        SITE.links = { ...SITE.links, ...t.links };
+    }
+}
+
+function getTextsPayload() {
+    return {
+        brand: SITE.brand,
+        name: SITE.name,
+        unlockHint: SITE.unlockHint,
+        tracksTitle: SITE.tracksTitle,
+        longBioBtnText: SITE.longBioBtnText,
+        bioBackText: SITE.bioBackText,
+        bioBadgeText: SITE.bioBadgeText,
+        bioFooterLabel: SITE.bioFooterLabel,
+        shortBio: SITE.shortBio,
+        longBio: SITE.longBio,
+        email: SITE.email,
+        links: SITE.links
+    };
+}
+
 try {
     localStorage.removeItem('mert_site_cache_v1');
     const cachedSettings = JSON.parse(localStorage.getItem('mert_cloud_settings_v2') || 'null');
     if (cachedSettings) applySettingsObject(cachedSettings);
+    const cachedTexts = JSON.parse(localStorage.getItem('mert_cloud_texts_v1') || 'null');
+    if (cachedTexts) applyTextsObject(cachedTexts);
 } catch (_) { }
 
 const sb = window.supabase
@@ -134,13 +177,25 @@ let adminTab = 'media';
 async function syncFromSupabase() {
     if (!sb) return;
     try {
-        sb.from('site_settings').select('*').eq('id', 1).maybeSingle().then(({ data: settingsData }) => {
-            if (settingsData) {
-                applySettingsObject(settingsData);
-                try {
-                    localStorage.setItem('mert_cloud_settings_v2', JSON.stringify(settingsData));
-                } catch (_) { }
+        sb.from('site_settings').select('*').in('id', [1, 2]).then(({ data: rows }) => {
+            if (Array.isArray(rows)) {
+                const row1 = rows.find(r => r.id === 1);
+                if (row1) {
+                    applySettingsObject(row1);
+                    try {
+                        localStorage.setItem('mert_cloud_settings_v2', JSON.stringify(row1));
+                    } catch (_) { }
+                }
+                const row2 = rows.find(r => r.id === 2);
+                if (row2 && row2.overlay_gif) {
+                    try {
+                        const parsedTexts = JSON.parse(row2.overlay_gif);
+                        applyTextsObject(parsedTexts);
+                        localStorage.setItem('mert_cloud_texts_v1', JSON.stringify(parsedTexts));
+                    } catch (_) { }
+                }
                 applyMedia();
+                buildDock();
             }
         });
 
@@ -214,6 +269,9 @@ function applyMedia() {
     document.title = SITE.name;
     $('#bn').textContent = SITE.brand;
 
+    const hintSpan = $('#hint span');
+    if (hintSpan) hintSpan.textContent = SITE.unlockHint;
+
     document.documentElement.style.setProperty('--lw', `url("${SITE.lockImage}")`);
 
     const v = $('#bgv');
@@ -252,6 +310,12 @@ function applyMedia() {
     if (bioMain) {
         bioMain.innerHTML = SITE.shortBio.map(p => `<p>${esc(p)}</p>`).join('');
     }
+
+    const trkLbl = $('#tracksBox .sub-box-label');
+    if (trkLbl) trkLbl.textContent = SITE.tracksTitle;
+
+    const bioBtn = $('#bioLinkBox');
+    if (bioBtn) bioBtn.textContent = SITE.longBioBtnText;
 
     renderTrackWidget();
 }
@@ -943,6 +1007,89 @@ const APPS = {
                         <button type="button" class="btn-pill active" id="admSaveWallBtn">Save Settings</button>
                     </div>
                 `;
+            } else if (adminTab === 'texts') {
+                tabBody = `
+                    <div style="max-height:420px;overflow-y:auto;padding-right:4px">
+                        <div class="adm-sec">
+                            <h4>1. Genel & Kilit Ekranı</h4>
+                            <div class="form-group">
+                                <label style="font-size:11.5px;color:rgba(255,255,255,.65)">Site Başlığı / Text Logo</label>
+                                <input class="inp" id="admTxtName" value="${esc(SITE.name)}">
+                                <div class="adm-row">
+                                    <div style="flex:1">
+                                        <label style="font-size:11.5px;color:rgba(255,255,255,.65);display:block;margin-bottom:4px">Sol Üst Bar Yazısı</label>
+                                        <input class="inp" id="admTxtBrand" value="${esc(SITE.brand)}">
+                                    </div>
+                                    <div style="flex:1">
+                                        <label style="font-size:11.5px;color:rgba(255,255,255,.65);display:block;margin-bottom:4px">Kilit Ekranı Alt Yazısı</label>
+                                        <input class="inp" id="admTxtHint" value="${esc(SITE.unlockHint)}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="adm-sec">
+                            <h4>2. Ana Sayfa Yazıları</h4>
+                            <div class="form-group">
+                                <label style="font-size:11.5px;color:rgba(255,255,255,.65)">Kısa Biyografi (Her satır ayrı paragraf olur)</label>
+                                <textarea class="inp" id="admTxtShortBio" rows="4">${esc(SITE.shortBio.join('\n\n'))}</textarea>
+                                <div class="adm-row">
+                                    <div style="flex:1">
+                                        <label style="font-size:11.5px;color:rgba(255,255,255,.65);display:block;margin-bottom:4px">Tracks Kutusu Başlığı</label>
+                                        <input class="inp" id="admTxtTrkTitle" value="${esc(SITE.tracksTitle)}">
+                                    </div>
+                                    <div style="flex:1">
+                                        <label style="font-size:11.5px;color:rgba(255,255,255,.65);display:block;margin-bottom:4px">Uzun Biyografi Buton Yazısı</label>
+                                        <input class="inp" id="admTxtBioBtn" value="${esc(SITE.longBioBtnText)}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="adm-sec">
+                            <h4>3. Uzun Biyografi Sayfası (bio.html)</h4>
+                            <div class="form-group">
+                                <label style="font-size:11.5px;color:rgba(255,255,255,.65)">Uzun Biyografi Metni (Her satır ayrı paragraf olur)</label>
+                                <textarea class="inp" id="admTxtLongBio" rows="8">${esc(SITE.longBio.join('\n\n'))}</textarea>
+                                <div class="adm-row">
+                                    <div style="flex:1">
+                                        <label style="font-size:11.5px;color:rgba(255,255,255,.65);display:block;margin-bottom:4px">Geri Dön Butonu</label>
+                                        <input class="inp" id="admTxtBioBack" value="${esc(SITE.bioBackText)}">
+                                    </div>
+                                    <div style="flex:1">
+                                        <label style="font-size:11.5px;color:rgba(255,255,255,.65);display:block;margin-bottom:4px">Sağ Üst Rozet</label>
+                                        <input class="inp" id="admTxtBioBadge" value="${esc(SITE.bioBadgeText)}">
+                                    </div>
+                                    <div style="flex:1">
+                                        <label style="font-size:11.5px;color:rgba(255,255,255,.65);display:block;margin-bottom:4px">Alt Başlık (Bookings)</label>
+                                        <input class="inp" id="admTxtBioFoot" value="${esc(SITE.bioFooterLabel)}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="adm-sec">
+                            <h4>4. İletişim & Sosyal Medya Linkleri</h4>
+                            <div class="form-group">
+                                <label style="font-size:11.5px;color:rgba(255,255,255,.65)">Booking E-posta Adresi</label>
+                                <input class="inp" id="admTxtEmail" value="${esc(SITE.email)}">
+                                <label style="font-size:11.5px;color:rgba(255,255,255,.65)">Instagram URL</label>
+                                <input class="inp" id="admTxtIg" value="${esc(SITE.links.instagram)}">
+                                <label style="font-size:11.5px;color:rgba(255,255,255,.65)">SoundCloud URL</label>
+                                <input class="inp" id="admTxtSc" value="${esc(SITE.links.soundcloud)}">
+                                <label style="font-size:11.5px;color:rgba(255,255,255,.65)">Spotify URL</label>
+                                <input class="inp" id="admTxtSp" value="${esc(SITE.links.spotify)}">
+                                <label style="font-size:11.5px;color:rgba(255,255,255,.65)">YouTube URL</label>
+                                <input class="inp" id="admTxtYt" value="${esc(SITE.links.youtube)}">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="adm-status" id="admTxtStatus"></div>
+                    <div style="display:flex;justify-content:flex-end;margin-top:8px">
+                        <button type="button" class="btn-pill active" id="admSaveTxtBtn">Save All Texts & Links</button>
+                    </div>
+                `;
             }
 
             return `
@@ -951,6 +1098,7 @@ const APPS = {
                         <button class="btn-pill ${adminTab === 'media' ? 'active' : ''}" data-atab="media">Photos & Albums</button>
                         <button class="btn-pill ${adminTab === 'tracks' ? 'active' : ''}" data-atab="tracks">Tracks (30s)</button>
                         <button class="btn-pill ${adminTab === 'appearance' ? 'active' : ''}" data-atab="appearance">Logo & Wallpapers</button>
+                        <button class="btn-pill ${adminTab === 'texts' ? 'active' : ''}" data-atab="texts">Texts & Links</button>
                     </div>
                     <button class="adm-del" id="admLogoutBtn">Sign Out</button>
                 </div>
@@ -1230,6 +1378,59 @@ const APPS = {
                     }
                     await saveSettingsToCloud();
                 };
+
+            } else if (adminTab === 'texts') {
+                const statusEl = w.querySelector('#admTxtStatus');
+                w.querySelector('#admSaveTxtBtn').onclick = async () => {
+                    SITE.name = w.querySelector('#admTxtName').value.trim() || 'MERTMERIC';
+                    SITE.brand = w.querySelector('#admTxtBrand').value.trim() || 'mert';
+                    SITE.unlockHint = w.querySelector('#admTxtHint').value.trim();
+                    SITE.tracksTitle = w.querySelector('#admTxtTrkTitle').value.trim() || 'tracks';
+                    SITE.longBioBtnText = w.querySelector('#admTxtBioBtn').value.trim() || 'Uzun Biyografi ↗';
+                    SITE.bioBackText = w.querySelector('#admTxtBioBack').value.trim() || '‹ Geri Dön';
+                    SITE.bioBadgeText = w.querySelector('#admTxtBioBadge').value.trim() || 'BIOGRAPHY';
+                    SITE.bioFooterLabel = w.querySelector('#admTxtBioFoot').value.trim() || 'Bookings & Management';
+
+                    const shortArr = w.querySelector('#admTxtShortBio').value
+                        .split(/\n+/)
+                        .map(s => s.trim())
+                        .filter(Boolean);
+                    if (shortArr.length) SITE.shortBio = shortArr;
+
+                    const longArr = w.querySelector('#admTxtLongBio').value
+                        .split(/\n+/)
+                        .map(s => s.trim())
+                        .filter(Boolean);
+                    if (longArr.length) SITE.longBio = longArr;
+
+                    SITE.email = w.querySelector('#admTxtEmail').value.trim();
+                    SITE.links.instagram = w.querySelector('#admTxtIg').value.trim();
+                    SITE.links.soundcloud = w.querySelector('#admTxtSc').value.trim();
+                    SITE.links.spotify = w.querySelector('#admTxtSp').value.trim();
+                    SITE.links.youtube = w.querySelector('#admTxtYt').value.trim();
+
+                    const payload = getTextsPayload();
+                    try {
+                        localStorage.setItem('mert_cloud_texts_v1', JSON.stringify(payload));
+                    } catch (_) { }
+
+                    applyMedia();
+                    buildDock();
+
+                    statusEl.textContent = 'Saving texts & links to cloud...';
+                    statusEl.classList.add('on');
+
+                    const { error } = await sb.from('site_settings').upsert({
+                        id: 2,
+                        overlay_gif: JSON.stringify(payload)
+                    }, { onConflict: 'id' });
+
+                    if (error) {
+                        statusEl.textContent = 'Error: ' + error.message;
+                    } else {
+                        statusEl.textContent = 'Saved ✓';
+                    }
+                };
             }
         }
     }
@@ -1240,18 +1441,20 @@ const winContainer = $('#win');
 let zIndexCounter = 25;
 let winOffsetCounter = 0;
 
-const DOCK_ITEMS = [
-    { id: 'instagram', title: 'Instagram', icon: ICONS.instagram, url: SITE.links.instagram },
-    { id: 'soundcloud', title: 'SoundCloud', icon: ICONS.soundcloud, url: SITE.links.soundcloud },
-    { id: 'spotify', title: 'Spotify', icon: ICONS.spotify, url: SITE.links.spotify },
-    { id: 'youtube', title: 'YouTube', icon: ICONS.youtube, url: SITE.links.youtube },
-    { id: 'photos', title: 'Photos', icon: ICONS.photos, app: 'photos' },
-    { id: 'contact', title: 'Contact', icon: ICONS.contact, app: 'contact' }
-];
+function getDockItems() {
+    return [
+        { id: 'instagram', title: 'Instagram', icon: ICONS.instagram, url: SITE.links.instagram },
+        { id: 'soundcloud', title: 'SoundCloud', icon: ICONS.soundcloud, url: SITE.links.soundcloud },
+        { id: 'spotify', title: 'Spotify', icon: ICONS.spotify, url: SITE.links.spotify },
+        { id: 'youtube', title: 'YouTube', icon: ICONS.youtube, url: SITE.links.youtube },
+        { id: 'photos', title: 'Photos', icon: ICONS.photos, app: 'photos' },
+        { id: 'contact', title: 'Contact', icon: ICONS.contact, app: 'contact' }
+    ];
+}
 
 function buildDock() {
     dock.innerHTML = '';
-    DOCK_ITEMS.forEach(item => {
+    getDockItems().forEach(item => {
         const el = document.createElement(item.url ? 'a' : 'button');
         el.className = 'dock-item';
         if (item.url) {
