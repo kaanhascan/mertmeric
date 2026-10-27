@@ -110,7 +110,7 @@ function detectMediaType(src, mime) {
 function applySettingsObject(s) {
     if (!s) return;
     SITE.lockImage = s.lock_image || SITE.lockImage || '';
-    SITE.logoImage = s.logo_image || s.overlay_gif || SITE.logoImage || '';
+    SITE.logoImage = s.logo_image || SITE.logoImage || '';
 
     const cloudBg = s.bg_gif || s.bg_video || '';
     if (cloudBg) {
@@ -122,49 +122,29 @@ function applySettingsObject(s) {
             SITE.bgVideo = '';
         }
     }
-}
 
-function applyTextsObject(t) {
-    if (!t || typeof t !== 'object') return;
-    if (typeof t.brand === 'string') SITE.brand = t.brand;
-    if (typeof t.name === 'string') SITE.name = t.name;
-    if (typeof t.unlockHint === 'string') SITE.unlockHint = t.unlockHint;
-    if (typeof t.tracksTitle === 'string') SITE.tracksTitle = t.tracksTitle;
-    if (typeof t.longBioBtnText === 'string') SITE.longBioBtnText = t.longBioBtnText;
-    if (typeof t.bioBackText === 'string') SITE.bioBackText = t.bioBackText;
-    if (typeof t.bioBadgeText === 'string') SITE.bioBadgeText = t.bioBadgeText;
-    if (typeof t.bioFooterLabel === 'string') SITE.bioFooterLabel = t.bioFooterLabel;
-    if (Array.isArray(t.shortBio) && t.shortBio.length) SITE.shortBio = t.shortBio;
-    if (Array.isArray(t.longBio) && t.longBio.length) SITE.longBio = t.longBio;
-    if (typeof t.email === 'string') SITE.email = t.email;
-    if (t.links && typeof t.links === 'object') {
-        SITE.links = { ...SITE.links, ...t.links };
-    }
-}
-
-function getTextsPayload() {
-    return {
-        brand: SITE.brand,
-        name: SITE.name,
-        unlockHint: SITE.unlockHint,
-        tracksTitle: SITE.tracksTitle,
-        longBioBtnText: SITE.longBioBtnText,
-        bioBackText: SITE.bioBackText,
-        bioBadgeText: SITE.bioBadgeText,
-        bioFooterLabel: SITE.bioFooterLabel,
-        shortBio: SITE.shortBio,
-        longBio: SITE.longBio,
-        email: SITE.email,
-        links: SITE.links
-    };
+    if (typeof s.brand === 'string' && s.brand) SITE.brand = s.brand;
+    if (typeof s.name === 'string' && s.name) SITE.name = s.name;
+    if (typeof s.unlock_hint === 'string') SITE.unlockHint = s.unlock_hint;
+    if (typeof s.tracks_title === 'string' && s.tracks_title) SITE.tracksTitle = s.tracks_title;
+    if (typeof s.long_bio_btn_text === 'string' && s.long_bio_btn_text) SITE.longBioBtnText = s.long_bio_btn_text;
+    if (typeof s.bio_back_text === 'string' && s.bio_back_text) SITE.bioBackText = s.bio_back_text;
+    if (typeof s.bio_badge_text === 'string' && s.bio_badge_text) SITE.bioBadgeText = s.bio_badge_text;
+    if (typeof s.bio_footer_label === 'string' && s.bio_footer_label) SITE.bioFooterLabel = s.bio_footer_label;
+    if (Array.isArray(s.short_bio) && s.short_bio.length) SITE.shortBio = s.short_bio;
+    if (Array.isArray(s.long_bio) && s.long_bio.length) SITE.longBio = s.long_bio;
+    if (typeof s.email === 'string' && s.email) SITE.email = s.email;
+    if (typeof s.instagram_url === 'string' && s.instagram_url) SITE.links.instagram = s.instagram_url;
+    if (typeof s.soundcloud_url === 'string' && s.soundcloud_url) SITE.links.soundcloud = s.soundcloud_url;
+    if (typeof s.spotify_url === 'string' && s.spotify_url) SITE.links.spotify = s.spotify_url;
+    if (typeof s.youtube_url === 'string' && s.youtube_url) SITE.links.youtube = s.youtube_url;
 }
 
 try {
     localStorage.removeItem('mert_site_cache_v1');
+    localStorage.removeItem('mert_cloud_texts_v1');
     const cachedSettings = JSON.parse(localStorage.getItem('mert_cloud_settings_v2') || 'null');
     if (cachedSettings) applySettingsObject(cachedSettings);
-    const cachedTexts = JSON.parse(localStorage.getItem('mert_cloud_texts_v1') || 'null');
-    if (cachedTexts) applyTextsObject(cachedTexts);
 } catch (_) { }
 
 const sb = window.supabase
@@ -177,23 +157,12 @@ let adminTab = 'media';
 async function syncFromSupabase() {
     if (!sb) return;
     try {
-        sb.from('site_settings').select('*').in('id', [1, 2]).then(({ data: rows }) => {
-            if (Array.isArray(rows)) {
-                const row1 = rows.find(r => r.id === 1);
-                if (row1) {
-                    applySettingsObject(row1);
-                    try {
-                        localStorage.setItem('mert_cloud_settings_v2', JSON.stringify(row1));
-                    } catch (_) { }
-                }
-                const row2 = rows.find(r => r.id === 2);
-                if (row2 && row2.overlay_gif) {
-                    try {
-                        const parsedTexts = JSON.parse(row2.overlay_gif);
-                        applyTextsObject(parsedTexts);
-                        localStorage.setItem('mert_cloud_texts_v1', JSON.stringify(parsedTexts));
-                    } catch (_) { }
-                }
+        sb.from('site_settings').select('*').eq('id', 1).maybeSingle().then(({ data: settingsData }) => {
+            if (settingsData) {
+                applySettingsObject(settingsData);
+                try {
+                    localStorage.setItem('mert_cloud_settings_v2', JSON.stringify(settingsData));
+                } catch (_) { }
                 applyMedia();
                 buildDock();
             }
@@ -1299,14 +1268,12 @@ const APPS = {
                     statusEl.classList.add('on');
                     applyMedia();
 
-                    const activeBg = SITE.bgGif || SITE.bgVideo || '';
                     await sb.from('site_settings').upsert({
                         id: 1,
                         logo_image: SITE.logoImage,
                         lock_image: SITE.lockImage,
                         bg_video: SITE.bgVideo,
-                        bg_gif: SITE.bgGif,
-                        overlay_gif: SITE.logoImage
+                        bg_gif: SITE.bgGif
                     }, { onConflict: 'id' });
 
                     await syncFromSupabase();
@@ -1409,11 +1376,6 @@ const APPS = {
                     SITE.links.spotify = w.querySelector('#admTxtSp').value.trim();
                     SITE.links.youtube = w.querySelector('#admTxtYt').value.trim();
 
-                    const payload = getTextsPayload();
-                    try {
-                        localStorage.setItem('mert_cloud_texts_v1', JSON.stringify(payload));
-                    } catch (_) { }
-
                     applyMedia();
                     buildDock();
 
@@ -1421,14 +1383,33 @@ const APPS = {
                     statusEl.classList.add('on');
 
                     const { error } = await sb.from('site_settings').upsert({
-                        id: 2,
-                        overlay_gif: JSON.stringify(payload)
+                        id: 1,
+                        brand: SITE.brand,
+                        name: SITE.name,
+                        unlock_hint: SITE.unlockHint,
+                        tracks_title: SITE.tracksTitle,
+                        long_bio_btn_text: SITE.longBioBtnText,
+                        bio_back_text: SITE.bioBackText,
+                        bio_badge_text: SITE.bioBadgeText,
+                        bio_footer_label: SITE.bioFooterLabel,
+                        short_bio: SITE.shortBio,
+                        long_bio: SITE.longBio,
+                        email: SITE.email,
+                        instagram_url: SITE.links.instagram,
+                        soundcloud_url: SITE.links.soundcloud,
+                        spotify_url: SITE.links.spotify,
+                        youtube_url: SITE.links.youtube
                     }, { onConflict: 'id' });
 
                     if (error) {
                         statusEl.textContent = 'Error: ' + error.message;
                     } else {
-                        statusEl.textContent = 'Saved ✓';
+                        await syncFromSupabase();
+                        const s = w.querySelector('#admTxtStatus');
+                        if (s) {
+                            s.textContent = 'Saved ✓';
+                            s.classList.add('on');
+                        }
                     }
                 };
             }

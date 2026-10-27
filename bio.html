@@ -62,11 +62,15 @@
                     <a id="bioFooterMail" href="mailto:keystance@outlook.com">keystance@outlook.com</a>
                 </div>
                 <div class="bio-page-links">
-                    <a id="bioLinkIg" href="https://www.instagram.com/mertmeric.7/" target="_blank" rel="noopener">Instagram ↗</a>
-                    <a id="bioLinkSc" href="https://soundcloud.com/mertmeric7" target="_blank" rel="noopener">SoundCloud ↗</a>
-                    <a id="bioLinkSp" href="https://open.spotify.com/intl-tr/artist/7AFLX94fKBZWjj0Mq9qQ3O?si=YJnObyGaTROUK6ynG6uHDA"
+                    <a id="bioLinkIg" href="https://www.instagram.com/mertmeric.7/" target="_blank"
+                        rel="noopener">Instagram ↗</a>
+                    <a id="bioLinkSc" href="https://soundcloud.com/mertmeric7" target="_blank" rel="noopener">SoundCloud
+                        ↗</a>
+                    <a id="bioLinkSp"
+                        href="https://open.spotify.com/intl-tr/artist/7AFLX94fKBZWjj0Mq9qQ3O?si=YJnObyGaTROUK6ynG6uHDA"
                         target="_blank" rel="noopener">Spotify ↗</a>
-                    <a id="bioLinkYt" href="https://youtu.be/DXFqUtnAJLE?si=05i51MZduxPMkPzI" target="_blank" rel="noopener">YouTube
+                    <a id="bioLinkYt" href="https://youtu.be/DXFqUtnAJLE?si=05i51MZduxPMkPzI" target="_blank"
+                        rel="noopener">YouTube
                         ↗</a>
                 </div>
             </div>
@@ -88,52 +92,69 @@
 
         const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
-        function applyBioTexts(t) {
-            if (!t || typeof t !== 'object') return;
-            if (t.name) {
-                document.title = t.name + ' — Biography';
-                document.getElementById('bioLogoText').textContent = t.name;
+        function applyBioSettings(d) {
+            if (!d || typeof d !== 'object') return;
+            if (d.logo_image) {
+                const logoImg = document.getElementById('bioLogoImg');
+                logoImg.src = d.logo_image;
+                logoImg.style.display = 'block';
+                document.getElementById('bioLogoText').style.display = 'none';
             }
-            if (t.brand) {
+            const cloudBg = d.bg_gif || d.bg_video || '';
+            if (cloudBg) {
+                const isVid = /\.(mp4|webm|mov|m4v)(\?.*)?$/i.test(cloudBg);
+                if (isVid) {
+                    const v = document.getElementById('bioBgv');
+                    v.src = cloudBg;
+                    v.style.display = 'block';
+                } else {
+                    const g = document.getElementById('bggif');
+                    g.src = cloudBg;
+                    g.style.display = 'block';
+                }
+            }
+            if (d.name) {
+                document.title = d.name + ' — Biography';
+                document.getElementById('bioLogoText').textContent = d.name;
+            }
+            if (d.brand) {
                 const bn = document.getElementById('bn');
-                if (bn) bn.textContent = t.brand;
+                if (bn) bn.textContent = d.brand;
             }
-            if (t.bioBackText) {
+            if (d.bio_back_text) {
                 const backBtn = document.querySelector('.bio-back-btn');
-                if (backBtn) backBtn.textContent = t.bioBackText;
+                if (backBtn) backBtn.textContent = d.bio_back_text;
             }
-            if (t.bioBadgeText) {
+            if (d.bio_badge_text) {
                 const badge = document.querySelector('.bio-badge');
-                if (badge) badge.textContent = t.bioBadgeText;
+                if (badge) badge.textContent = d.bio_badge_text;
             }
-            if (t.bioFooterLabel) {
+            if (d.bio_footer_label) {
                 const footLbl = document.getElementById('bioFooterLbl');
-                if (footLbl) footLbl.textContent = t.bioFooterLabel;
+                if (footLbl) footLbl.textContent = d.bio_footer_label;
             }
-            if (Array.isArray(t.longBio) && t.longBio.length) {
+            if (Array.isArray(d.long_bio) && d.long_bio.length) {
                 const contentEl = document.getElementById('bioPageContent');
                 if (contentEl) {
-                    contentEl.innerHTML = t.longBio.map(p => `<p>${esc(p)}</p>`).join('');
+                    contentEl.innerHTML = d.long_bio.map(p => `<p>${esc(p)}</p>`).join('');
                 }
             }
-            if (t.email) {
+            if (d.email) {
                 const mailEl = document.getElementById('bioFooterMail');
                 if (mailEl) {
-                    mailEl.textContent = t.email;
-                    mailEl.href = 'mailto:' + t.email;
+                    mailEl.textContent = d.email;
+                    mailEl.href = 'mailto:' + d.email;
                 }
             }
-            if (t.links) {
-                if (t.links.instagram) document.getElementById('bioLinkIg').href = t.links.instagram;
-                if (t.links.soundcloud) document.getElementById('bioLinkSc').href = t.links.soundcloud;
-                if (t.links.spotify) document.getElementById('bioLinkSp').href = t.links.spotify;
-                if (t.links.youtube) document.getElementById('bioLinkYt').href = t.links.youtube;
-            }
+            if (d.instagram_url) document.getElementById('bioLinkIg').href = d.instagram_url;
+            if (d.soundcloud_url) document.getElementById('bioLinkSc').href = d.soundcloud_url;
+            if (d.spotify_url) document.getElementById('bioLinkSp').href = d.spotify_url;
+            if (d.youtube_url) document.getElementById('bioLinkYt').href = d.youtube_url;
         }
 
         try {
-            const cachedTexts = JSON.parse(localStorage.getItem('mert_cloud_texts_v1') || 'null');
-            if (cachedTexts) applyBioTexts(cachedTexts);
+            const cached = JSON.parse(localStorage.getItem('mert_cloud_settings_v2') || 'null');
+            if (cached) applyBioSettings(cached);
         } catch (_) { }
 
         (async function () {
@@ -142,47 +163,15 @@
             if (!window.supabase) return;
             try {
                 const sb = window.supabase.createClient(url, anonKey);
-                const { data: rows } = await sb.from('site_settings').select('*').in('id', [1, 2]);
-                if (!Array.isArray(rows)) return;
-
-                const data = rows.find(r => r.id === 1);
-                if (data) {
-                    const logoUrl = data.logo_image || data.overlay_gif || '';
-                    if (logoUrl) {
-                        const logoImg = document.getElementById('bioLogoImg');
-                        logoImg.src = logoUrl;
-                        logoImg.style.display = 'block';
-                        document.getElementById('bioLogoText').style.display = 'none';
-                    }
-
-                    const cloudBg = data.bg_gif || data.bg_video || '';
-                    if (cloudBg) {
-                        const isVid = /\.(mp4|webm|mov|m4v)(\?.*)?$/i.test(cloudBg);
-                        if (isVid) {
-                            const v = document.getElementById('bioBgv');
-                            v.src = cloudBg;
-                            v.style.display = 'block';
-                        } else {
-                            const g = document.getElementById('bggif');
-                            g.src = cloudBg;
-                            g.style.display = 'block';
-                        }
-                    }
-                }
-
-                const row2 = rows.find(r => r.id === 2);
-                if (row2 && row2.overlay_gif) {
-                    try {
-                        const parsedTexts = JSON.parse(row2.overlay_gif);
-                        applyBioTexts(parsedTexts);
-                        localStorage.setItem('mert_cloud_texts_v1', JSON.stringify(parsedTexts));
-                    } catch (_) { }
-                }
+                const { data } = await sb.from('site_settings').select('*').eq('id', 1).maybeSingle();
+                if (!data) return;
+                applyBioSettings(data);
+                try {
+                    localStorage.setItem('mert_cloud_settings_v2', JSON.stringify(data));
+                } catch (_) { }
             } catch (_) { }
         })();
     </script>
 </body>
-
-</html>
 
 </html>
