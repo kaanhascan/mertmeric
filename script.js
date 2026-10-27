@@ -6,7 +6,7 @@ const SUPABASE_CONFIG = {
 
 const SITE = {
     brand: "mert",
-    name: "MERTMERIC",
+    name: "mertmeric",
     locale: "en-US",
     hour12: true,
     lang: localStorage.getItem('site_lang') === 'en' ? 'en' : 'tr',
