@@ -952,7 +952,7 @@ const APPS = {
                     </div>
 
                     <div class="adm-sec">
-                        <h4>"Uncompressed" Link (Photos Sağ Üst)</h4>
+                        <h4>"Uncompressed" Link</h4>
                         <div class="adm-row">
                             <input class="inp" id="admMediaUncompUrl" value="${esc(SITE.links.uncompressed)}" placeholder="https://drive.google.com/..." style="flex:1">
                             <button type="button" class="btn-pill active" id="admSaveUncompBtn">Save Link</button>
