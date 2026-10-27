@@ -1368,8 +1368,12 @@ select.inp {
 }
 
 @media (max-width: 700px) {
-    #bar .hide-sm {
+    #bar {
         display: none;
+    }
+
+    #win {
+        inset: 0;
     }
 
     #ltime {
@@ -1377,6 +1381,7 @@ select.inp {
     }
 
     #hub {
+        top: 16px;
         width: 94vw;
         gap: 10px;
         bottom: 92px;
