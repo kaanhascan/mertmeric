@@ -147,7 +147,7 @@
             const list = BIO_STATE.longBio[BIO_STATE.lang] || BIO_STATE.longBio.tr;
             const contentEl = document.getElementById('bioPageContent');
             if (contentEl && Array.isArray(list)) {
-                contentEl.innerHTML = list.map(p => `<p>${esc(p)}</p>`).join('');
+                contentEl.innerHTML = list.map(p => `<p>${esc(p).replace(/MERTMERIC/g, '<span class="bio-brand">MERTMERIC</span>')}</p>`).join('');
             }
             const backBtn = document.querySelector('.bio-back-btn');
             if (backBtn) {

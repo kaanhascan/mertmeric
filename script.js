@@ -295,13 +295,19 @@ function applyMedia() {
     }
 
     const logoImg = $('#hubLogoImg');
+    const logoWrap = $('#logoImgWrap');
     const logoTxt = $('#hubLogoText');
     if (SITE.logoImage) {
         logoImg.src = SITE.logoImage;
         logoImg.style.display = 'block';
+        if (logoWrap) {
+            logoWrap.style.display = 'inline-flex';
+            logoWrap.style.setProperty('--logo-mask', `url("${SITE.logoImage}")`);
+        }
         logoTxt.style.display = 'none';
     } else {
         logoImg.style.display = 'none';
+        if (logoWrap) logoWrap.style.display = 'none';
         logoTxt.style.display = 'block';
         logoTxt.textContent = SITE.name;
     }
@@ -309,7 +315,7 @@ function applyMedia() {
     const bioMain = $('#bioMainBox');
     if (bioMain) {
         const list = SITE.shortBio[SITE.lang] || SITE.shortBio.tr;
-        bioMain.innerHTML = list.map(p => `<p>${esc(p)}</p>`).join('');
+        bioMain.innerHTML = list.map(p => `<p>${esc(p).replace(/MERTMERIC/g, '<span class="bio-brand">MERTMERIC</span>')}</p>`).join('');
     }
 
     document.querySelectorAll('#hubLangSwitch .lang-flag-btn').forEach(btn => {
