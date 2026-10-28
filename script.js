@@ -335,7 +335,10 @@ function applyMedia() {
     const hintSpan = $('#hint span');
     if (hintSpan) hintSpan.textContent = SITE.unlockHint;
 
-    document.documentElement.style.setProperty('--lw', `url("${SITE.lockImage}")`);
+    document.documentElement.style.setProperty(
+        '--lw',
+        SITE.lockImage ? `url("${SITE.lockImage}")` : 'none'
+    );
 
     const v = $('#bgv');
     const g = $('#bggif');
@@ -398,12 +401,13 @@ function applyMedia() {
     }
 
     renderTrackWidget();
+    requestAnimationFrame(updateViewportScale);
 }
 
 document.querySelectorAll('#hubLangSwitch .lang-flag-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         SITE.lang = btn.dataset.lang === 'en' ? 'en' : 'tr';
-        try { localStorage.setItem('mert_lang', SITE.lang); } catch (_) { }
+        try { localStorage.setItem('site_lang', SITE.lang); } catch (_) { }
         applyMedia();
     });
 });
@@ -564,11 +568,27 @@ function unlock() {
 }
 
 lock.addEventListener('click', unlock);
-lock.addEventListener('pointerdown', e => y0 = e.clientY);
+lock.addEventListener('pointerdown', e => { y0 = e.clientY; });
+lock.addEventListener('pointermove', e => {
+    if (y0 !== null && y0 - e.clientY > 30) {
+        y0 = null;
+        unlock();
+    }
+});
 lock.addEventListener('pointerup', e => {
-    if (y0 !== null && y0 - e.clientY > 35) unlock();
+    if (y0 !== null && y0 - e.clientY > 30) unlock();
     y0 = null;
 });
+lock.addEventListener('touchstart', e => {
+    if (e.touches && e.touches[0]) y0 = e.touches[0].clientY;
+}, { passive: true });
+lock.addEventListener('touchmove', e => {
+    if (y0 !== null && e.touches && e.touches[0] && y0 - e.touches[0].clientY > 30) {
+        y0 = null;
+        unlock();
+    }
+}, { passive: true });
+lock.addEventListener('touchend', () => { y0 = null; }, { passive: true });
 
 if (location.hash === '#hub') {
     lock.style.transition = 'none';
@@ -1798,7 +1818,7 @@ addEventListener('keydown', e => {
 
 let brandClickCount = 0;
 let brandClickTimer = null;
-$('#bn').addEventListener('click', () => {
+function handleAdminSecretTap() {
     brandClickCount++;
     clearTimeout(brandClickTimer);
     if (brandClickCount >= 3) {
@@ -1807,19 +1827,46 @@ $('#bn').addEventListener('click', () => {
     } else {
         brandClickTimer = setTimeout(() => { brandClickCount = 0; }, 600);
     }
-});
+}
+$('#bn').addEventListener('click', handleAdminSecretTap);
+$('#logoBox')?.addEventListener('click', handleAdminSecretTap);
 
 function updateViewportScale() {
-    if (window.innerWidth <= 700) {
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const hub = $('#hub');
+    const dockEl = $('#dock');
+
+    if (vw <= 768) {
         document.documentElement.style.setProperty('--ui-scale', '1');
+        if (hub && dockEl) {
+            const dockH = dockEl.offsetHeight || 68;
+            const availH = Math.max(200, vh - dockH - 32);
+            const hubH = hub.scrollHeight || hub.offsetHeight || 1;
+            const fit = Math.max(0.6, Math.min(1, availH / hubH));
+            const scaledHubH = Math.min(availH, hubH * fit);
+            const topOffset = Math.max(12, Math.round((vh - dockH - 12 - scaledHubH) * 0.42));
+            document.documentElement.style.setProperty('--mob-fit', fit.toFixed(4));
+            document.documentElement.style.setProperty('--mob-top', topOffset + 'px');
+            document.documentElement.style.setProperty('--mob-avail', Math.max(160, vh - dockH - 24 - topOffset) + 'px');
+        } else {
+            document.documentElement.style.setProperty('--mob-fit', '1');
+            document.documentElement.style.setProperty('--mob-top', '16px');
+        }
         return;
     }
-    const scale = Math.min(window.innerWidth / 1920, window.innerHeight / 955);
+
+    document.documentElement.style.setProperty('--mob-fit', '1');
+    const hubH = hub ? hub.scrollHeight : 800;
+    const dockH = dockEl ? dockEl.offsetHeight : 112;
+    const byHeight = vh / (32 + hubH + dockH + 12 + 20);
+    const scale = Math.max(0.4, Math.min(1, vw / 1200, byHeight));
     document.documentElement.style.setProperty('--ui-scale', scale.toFixed(4));
 }
 
 updateViewportScale();
 addEventListener('resize', updateViewportScale);
+$('#hubLogoImg')?.addEventListener('load', updateViewportScale);
 
 applyMedia();
 syncFromSupabase();
@@ -1829,3 +1876,4 @@ setInterval(tick, 10000);
 const tracksCardEl = $('#tracksBox');
 if (tracksCardEl && window.ResizeObserver) new ResizeObserver(updateLiquidCard).observe(tracksCardEl);
 updateLiquidCard();
+if (window.ResizeObserver && $('#hub')) new ResizeObserver(updateViewportScale).observe($('#hub'));
