@@ -609,10 +609,11 @@ function getActiveMediaList() {
 }
 
 function renderMediaTile(item, idx) {
-    const durBadge = item.duration ? `<span class="vid-dur">${esc(item.duration)}</span>` :
-        (item.type === 'video' ? `<span class="vid-dur" data-auto-dur></span>` : '');
+    const isTileVid = item.type === 'video' || (!item.type && detectMediaType(item.src) === 'video');
+    const durBadge = isTileVid ? (item.duration ? `<span class="vid-dur">${esc(item.duration)}</span>` : `<span class="vid-dur" data-auto-dur></span>`) : '';
 
-    if (item.type === 'video') {
+
+    if (isTileVid) {
         return `
             <div class="lib-item" data-idx="${idx}">
                 <video src="${esc(item.src)}" muted loop playsinline preload="metadata"></video>
@@ -636,7 +637,7 @@ function renderPhotosDetailViewer() {
     }
     viewerIndex = (viewerIndex + list.length) % list.length;
     const item = list[viewerIndex];
-    const isVid = item.type === 'video';
+    const isVid = item.type === 'video' || (!item.type && detectMediaType(item.src) === 'video');
     const remDefault = item.duration ? `-${item.duration}` : '-0:00';
 
     return `
@@ -654,7 +655,7 @@ function renderPhotosDetailViewer() {
                 <div class="pview-zone next" id="pviewNext" title="Next"></div>
             </div>
 
-            <div class="pview-scrub">
+            <div class="pview-scrub" style="display:${isVid ? 'flex' : 'none'}">
                 <span class="pview-time" id="pviewCur">0:00</span>
                 <input type="range" class="pview-range" id="pviewRange" min="0" max="100" step="0.1" value="0">
                 <span class="pview-time rem" id="pviewRem">${esc(remDefault)}</span>
