@@ -5,8 +5,8 @@ const SUPABASE_CONFIG = {
 };
 
 const SITE = {
-    brand: "mertmeric",
-    name: "mertmeric",
+    brand: "MERTMERIC",
+    name: "MERTMERIC",
     locale: "en-US",
     hour12: true,
     lang: localStorage.getItem('site_lang') === 'en' ? 'en' : 'tr',
@@ -127,6 +127,12 @@ const ICONS = {
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function safeUrl(u) {
+    u = String(u || '').trim();
+    if (!u) return '';
+    if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
+    try { return new URL(u).href; } catch (_) { return ''; }
+}
 
 function makeLiquidMap(w, h, r, bezel) {
     const c = document.createElement('canvas');
@@ -270,7 +276,7 @@ async function syncFromSupabase() {
         ] = await Promise.all([
             sb.from('albums').select('*').order('created_at', { ascending: true }),
             sb.from('media_items').select('*').order('created_at', { ascending: false }),
-            sb.from('tracks').select('*').order('created_at', { ascending: false }),
+            sb.from('tracks').select('*').order('sort_order', { ascending: true }).order('created_at', { ascending: false }),
             sb.auth.getSession()
         ]);
 
@@ -470,14 +476,19 @@ function renderTrackWidget() {
     }
 
     const cur = Math.min(30, trackAudio.currentTime || 0);
+    const trkHref = safeUrl(trk.link);
     wrap.innerHTML = `
-        <div class="trk-main">
+        <div class="trk-main ${trkHref ? 'has-link' : ''}">
             <img class="trk-cover" src="${esc(trk.cover)}" alt="${esc(trk.title)}">
             <div class="trk-meta">
                 <div class="trk-title" title="${esc(trk.title)}">${esc(trk.title)}</div>
                 <div class="trk-sub">30s Preview</div>
             </div>
         </div>
+        ${trkHref ? `
+        <a class="trk-link" href="${esc(trkHref)}" target="_blank" rel="noopener" title="Parçayı dinle" aria-label="Track link">
+            <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        </a>` : ''}
 
         <div class="trk-prog">
             <div class="trk-times">
@@ -1076,6 +1087,7 @@ const APPS = {
                         <h4>Add 30s Track Preview</h4>
                         <div class="form-group">
                             <input class="inp" id="admTrkTitle" placeholder="Track Name (e.g. MERTMERIC — ID)">
+                            <input class="inp" id="admTrkLink" placeholder="Şarkı linki">
                             <div class="adm-row">
                                 <label class="btn-pill" style="cursor:pointer;flex:1;text-align:center">
                                     <span id="admCovBtnTxt">Select Cover Photo</span>
@@ -1092,14 +1104,23 @@ const APPS = {
                     </div>
                     <div class="adm-sec">
                         <h4>Tracks (${SITE.tracks.length})</h4>
-                        <div style="max-height:220px;overflow-y:auto">
+                        <div style="max-height:300px;overflow-y:auto">
                             ${SITE.tracks.map((t, idx) => `
-                                <div class="adm-item">
-                                    <div style="display:flex;align-items:center;gap:10px;min-width:0">
+                                <div class="adm-item" style="flex-wrap:wrap">
+                                    <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1">
+                                        <span style="font-size:11px;color:rgba(255,255,255,.5);width:16px">${idx + 1}</span>
                                         <img src="${esc(t.cover)}" alt="">
                                         <b style="font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.title)}</b>
                                     </div>
-                                    <button class="adm-del adm-del-trk" data-idx="${idx}">Delete</button>
+                                    <div style="display:flex;gap:6px;flex:none">
+                                        <button class="btn-pill adm-trk-up" data-idx="${idx}" ${idx === 0 ? 'disabled style="opacity:.35"' : ''}>↑</button>
+                                        <button class="btn-pill adm-trk-down" data-idx="${idx}" ${idx === SITE.tracks.length - 1 ? 'disabled style="opacity:.35"' : ''}>↓</button>
+                                        <button class="adm-del adm-del-trk" data-idx="${idx}">Delete</button>
+                                    </div>
+                                    <div class="adm-row" style="width:100%;margin:6px 0 0">
+                                        <input class="inp" data-trk-link="${idx}" value="${esc(t.link || '')}" placeholder="Şarkı linki" style="flex:1">
+                                        <button class="btn-pill active adm-trk-savelink" data-idx="${idx}">Kaydet</button>
+                                    </div>
                                 </div>
                             `).join('')}
                         </div>
@@ -1445,8 +1466,11 @@ const APPS = {
                     try {
                         const upCov = await uploadFileToSupabase(covFile, 'tracks');
                         const upAud = await uploadFileToSupabase(audFile, 'tracks');
+                        const nextOrder = SITE.tracks.reduce((m, t) => Math.max(m, t.sort_order ?? 0), -1) + 1;
                         const { error } = await sb.from('tracks').insert([{
                             title,
+                            link: w.querySelector('#admTrkLink').value.trim() || null,
+                            sort_order: nextOrder,
                             cover: upCov.publicUrl,
                             cover_path: upCov.storagePath,
                             audio: upAud.publicUrl,
@@ -1458,6 +1482,57 @@ const APPS = {
                         statusEl.textContent = 'Error: ' + err.message;
                     }
                 };
+
+                const trkStatus = w.querySelector('#admTrkStatus');
+                const saveOrder = async () => {
+                    trkStatus.textContent = 'Sıralama kaydediliyor...';
+                    trkStatus.classList.add('on');
+                    const results = await Promise.all(
+                        SITE.tracks.map((t, i) => sb.from('tracks').update({ sort_order: i }).eq('id', t.id))
+                    );
+                    const failed = results.find(r => r.error);
+                    if (failed) {
+                        trkStatus.textContent = 'Hata: ' + failed.error.message;
+                        return;
+                    }
+                    await syncFromSupabase();
+                };
+
+                w.querySelectorAll('.adm-trk-up').forEach(btn => {
+                    btn.onclick = async () => {
+                        const i = Number(btn.dataset.idx);
+                        if (i <= 0) return;
+                        [SITE.tracks[i - 1], SITE.tracks[i]] = [SITE.tracks[i], SITE.tracks[i - 1]];
+                        await saveOrder();
+                    };
+                });
+
+                w.querySelectorAll('.adm-trk-down').forEach(btn => {
+                    btn.onclick = async () => {
+                        const i = Number(btn.dataset.idx);
+                        if (i >= SITE.tracks.length - 1) return;
+                        [SITE.tracks[i + 1], SITE.tracks[i]] = [SITE.tracks[i], SITE.tracks[i + 1]];
+                        await saveOrder();
+                    };
+                });
+
+                w.querySelectorAll('.adm-trk-savelink').forEach(btn => {
+                    btn.onclick = async () => {
+                        const idx = Number(btn.dataset.idx);
+                        const trk = SITE.tracks[idx];
+                        if (!trk) return;
+                        const val = w.querySelector(`[data-trk-link="${idx}"]`).value.trim();
+                        btn.textContent = '...';
+                        const { error } = await sb.from('tracks').update({ link: val || null }).eq('id', trk.id);
+                        if (error) {
+                            trkStatus.textContent = 'Hata: ' + error.message;
+                            trkStatus.classList.add('on');
+                            btn.textContent = 'Kaydet';
+                            return;
+                        }
+                        await syncFromSupabase();
+                    };
+                });
 
                 w.querySelectorAll('.adm-del-trk').forEach(btn => {
                     btn.onclick = async () => {
