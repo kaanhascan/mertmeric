@@ -295,7 +295,7 @@ async function uploadFileToSupabase(file, folder = 'uploads') {
     const ext = (file.name.split('.').pop() || 'bin').toLowerCase();
     const path = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
     const { error } = await sb.storage.from(SUPABASE_CONFIG.bucket).upload(path, file, {
-        cacheControl: '3600',
+        cacheControl: '31536000, immutable',
         upsert: false
     });
     if (error) throw error;
