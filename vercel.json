@@ -1,0 +1,19 @@
+{
+  "headers": [
+    {
+      "source": "/storage/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, s-maxage=31536000, immutable"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/storage/:path*",
+      "destination": "https://gjbvypvyikrwicdfhler.supabase.co/storage/v1/object/public/media/:path*"
+    }
+  ]
+}

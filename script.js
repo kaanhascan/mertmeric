@@ -4,6 +4,18 @@ const SUPABASE_CONFIG = {
     bucket: "media"
 };
 
+function getProxiedMediaUrl(url) {
+    if (!url || typeof url !== 'string') return url;
+    if (typeof window !== 'undefined' && window.location && window.location.protocol === 'file:') {
+        return url;
+    }
+    const prefix = `${SUPABASE_CONFIG.url}/storage/v1/object/public/${SUPABASE_CONFIG.bucket}/`;
+    if (url.startsWith(prefix)) {
+        return '/storage/' + url.slice(prefix.length);
+    }
+    return url;
+}
+
 const SITE = {
     brand: "MERTMERIC",
     name: "MERTMERIC",
@@ -189,10 +201,10 @@ function detectMediaType(src, mime) {
 
 function applySettingsObject(s) {
     if (!s) return;
-    SITE.lockImage = s.lock_image || SITE.lockImage || '';
-    SITE.logoImage = s.logo_image || SITE.logoImage || '';
+    SITE.lockImage = getProxiedMediaUrl(s.lock_image) || SITE.lockImage || '';
+    SITE.logoImage = getProxiedMediaUrl(s.logo_image) || SITE.logoImage || '';
 
-    const cloudBg = s.bg_gif || s.bg_video || '';
+    const cloudBg = getProxiedMediaUrl(s.bg_gif || s.bg_video || '');
     if (cloudBg) {
         if (detectMediaType(cloudBg) === 'video') {
             SITE.bgVideo = cloudBg;
@@ -232,7 +244,7 @@ function applySettingsObject(s) {
     if (typeof s.uncompressed_url === 'string') SITE.links.uncompressed = s.uncompressed_url;
     if (s.dock_icons && typeof s.dock_icons === 'object') {
         ['instagram', 'soundcloud', 'spotify', 'youtube', 'photos', 'contact'].forEach(k => {
-            if (typeof s.dock_icons[k] === 'string') SITE.dockIcons[k] = s.dock_icons[k];
+            if (typeof s.dock_icons[k] === 'string') SITE.dockIcons[k] = getProxiedMediaUrl(s.dock_icons[k]);
         });
         if (typeof s.dock_icons._uncompressed_url === 'string') {
             SITE.links.uncompressed = s.dock_icons._uncompressed_url;
@@ -282,9 +294,9 @@ async function syncFromSupabase() {
 
         adminSession = sessionRes?.session || null;
 
-        if (Array.isArray(albumsData)) SITE.albums = albumsData;
-        if (Array.isArray(mediaData)) SITE.media = mediaData;
-        if (Array.isArray(tracksData)) SITE.tracks = tracksData;
+        if (Array.isArray(albumsData)) SITE.albums = albumsData.map(a => ({ ...a, cover: getProxiedMediaUrl(a.cover) }));
+        if (Array.isArray(mediaData)) SITE.media = mediaData.map(m => ({ ...m, src: getProxiedMediaUrl(m.src) }));
+        if (Array.isArray(tracksData)) SITE.tracks = tracksData.map(t => ({ ...t, audio: getProxiedMediaUrl(t.audio), cover: getProxiedMediaUrl(t.cover) }));
 
         applyMedia();
         refreshOpenWindows();

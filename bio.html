@@ -192,15 +192,26 @@
             });
         });
 
+        function getProxiedMediaUrl(url) {
+            if (!url || typeof url !== 'string') return url;
+            if (typeof window !== 'undefined' && window.location && window.location.protocol === 'file:') return url;
+            const prefix = "https://gjbvypvyikrwicdfhler.supabase.co/storage/v1/object/public/media/";
+            if (url.startsWith(prefix)) {
+                return '/storage/' + url.slice(prefix.length);
+            }
+            return url;
+        }
+
         function applyBioSettings(d) {
             if (!d || typeof d !== 'object') return;
             if (d.logo_image) {
                 const logoImg = document.getElementById('bioLogoImg');
-                if (logoImg.getAttribute('src') !== d.logo_image) logoImg.src = d.logo_image;
+                const proxiedLogo = getProxiedMediaUrl(d.logo_image);
+                if (logoImg.getAttribute('src') !== proxiedLogo) logoImg.src = proxiedLogo;
                 logoImg.style.display = 'block';
                 document.getElementById('bioLogoText').style.display = 'none';
             }
-            const cloudBg = d.bg_gif || d.bg_video || '';
+            const cloudBg = getProxiedMediaUrl(d.bg_gif || d.bg_video || '');
             if (cloudBg) {
                 const isVid = /\.(mp4|webm|mov|m4v)(\?.*)?$/i.test(cloudBg);
                 if (isVid) {
