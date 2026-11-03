@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://gjbvypvyikrwicdfhler.supabase.co" crossorigin>
     <link rel="preconnect" href="https://fonts.cdnfonts.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.cdnfonts.com/css/sf-pro-display" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="style.css?v=9">
+    <link rel="stylesheet" href="style.css?v=11">
 </head>
 
 <body class="bio-page-body">
@@ -70,55 +70,26 @@
 
             <div class="bio-page-logo" id="bioPageLogo">
                 <img id="bioLogoImg" alt="MERTMERIC" style="display:none">
-                <h1 id="bioLogoText">MERTMERIC</h1>
+                <h1 id="bioLogoText" style="display:none">MERTMERIC</h1>
             </div>
 
-            <div class="bio-page-content" id="bioPageContent">
-                <p>MERTMERIC, Türkçe müziğin kendine özgü karakterini sert elektronik sound'larla bir araya getiren bir
-                    DJ, prodüktör ve artist.</p>
-                <p>On yılı aşkın süredir müzik üreten MERTMERIC, son üç yıldır odağını elektronik müziğe yönelterek
-                    Turkish Bounce, Hard Techno ve Hard Trance arasında kendi müzikal kimliğini geliştiriyor.
-                    Üretimlerinde yüksek tempo, güçlü elektronik dokular ve vokallerin taşıdığı tanıdık duyguyu ön
-                    planda tutuyor.</p>
-                <p>“Pembe Mezarlık” ve “Değmesin Ellerimiz” gibi yüksek streamler yakalayan Türkçe parçalar üzerinden
-                    şekillenen remix yaklaşımının yanında “NOT LIKE THIS”, “MAMAKJUMP”, “Afraid of the Darkness” ve
-                    “HASSIKTIR” gibi orijinal çalışmalarıyla da kendi sound'unu ortaya koyuyor.</p>
-                <p>MERTMERIC için Türkçe müziği elektronik müziğe taşımak yalnızca bir remix meselesi değil; Türkçenin,
-                    yerel müzikal hafızanın ve elektronik müziğin aynı sahnede doğal bir şekilde var olabileceğini
-                    göstermek. Hedefi, bu yaklaşımı Türkiye'deki kulüp kültürünün ötesine taşıyarak uluslararası
-                    elektronik müzik kitlesiyle buluşturmak.</p>
-                <p>Yaratıcı yaklaşımının merkezinde ise bir motto var: “Creating things you wish existed.” Var olanı
-                    tekrarlamak yerine, insanların duymak isteyip de ortada olmayan müziği üretmek.</p>
-                <p>"Türkçe müziğin elektronik müzikte daha fazla yer bulması gerektiğine inanıyorum. Tanıdık vokallerin,
-                    Türkçenin kendine özgü karakterinin ve sert elektronik sound'ların bir araya geldiği bir alan
-                    yaratmak istiyorum.</p>
-                <p>Amacım yalnızca sevilen parçaları remixlemek değil; Türkçe müziği kulüp kültürünün doğal bir parçası
-                    hâline getirmek ve kendi orijinal üretimlerimle bu dünyaya katkıda bulunmak.</p>
-                <p>Benim için yaratıcılık, zaten var olanı tekrarlamak değil, eksikliğini hissettiğin şeyi üretmek."</p>
-            </div>
+            <div class="bio-page-content" id="bioPageContent"></div>
 
             <div class="bio-page-footer">
                 <div>
                     <small id="bioFooterLbl">Bookings & Management</small>
-                    <a id="bioFooterMail" href="mailto:keystance@outlook.com">keystance@outlook.com</a>
+                    <a id="bioFooterMail" href="#"></a>
                 </div>
                 <div class="bio-page-links">
-                    <a id="bioLinkIg" href="https://www.instagram.com/mertmeric.7/" target="_blank"
-                        rel="noopener">Instagram ↗</a>
-                    <a id="bioLinkSc" href="https://soundcloud.com/mertmeric7" target="_blank" rel="noopener">SoundCloud
-                        ↗</a>
-                    <a id="bioLinkSp"
-                        href="https://open.spotify.com/intl-tr/artist/7AFLX94fKBZWjj0Mq9qQ3O?si=YJnObyGaTROUK6ynG6uHDA"
-                        target="_blank" rel="noopener">Spotify ↗</a>
-                    <a id="bioLinkYt" href="https://youtu.be/DXFqUtnAJLE?si=05i51MZduxPMkPzI" target="_blank"
-                        rel="noopener">YouTube
-                        ↗</a>
+                    <a id="bioLinkIg" href="#" target="_blank" rel="noopener">Instagram ↗</a>
+                    <a id="bioLinkSc" href="#" target="_blank" rel="noopener">SoundCloud ↗</a>
+                    <a id="bioLinkSp" href="#" target="_blank" rel="noopener">Spotify ↗</a>
+                    <a id="bioLinkYt" href="#" target="_blank" rel="noopener">YouTube ↗</a>
                 </div>
             </div>
         </article>
     </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         function updateViewportScale() {
             if (window.innerWidth <= 768) {
@@ -148,28 +119,7 @@
             lang: localStorage.getItem('site_lang') === 'en' ? 'en' : 'tr',
             backTr: "‹ Geri Dön",
             backEn: "‹ Back",
-            longBio: {
-                tr: [
-                    "MERTMERIC, Türkçe müziğin kendine özgü karakterini sert elektronik sound'larla bir araya getiren bir DJ, prodüktör ve artist.",
-                    "On yılı aşkın süredir müzik üreten MERTMERIC, son üç yıldır odağını elektronik müziğe yönelterek Turkish Bounce, Hard Techno ve Hard Trance arasında kendi müzikal kimliğini geliştiriyor. Üretimlerinde yüksek tempo, güçlü elektronik dokular ve vokallerin taşıdığı tanıdık duyguyu ön planda tutuyor.",
-                    "“Pembe Mezarlık” ve “Değmesin Ellerimiz” gibi yüksek streamler yakalayan Türkçe parçalar üzerinden şekillenen remix yaklaşımının yanında “NOT LIKE THIS”, “MAMAKJUMP”, “Afraid of the Darkness” ve “HASSIKTIR” gibi orijinal çalışmalarıyla da kendi sound'unu ortaya koyuyor.",
-                    "MERTMERIC için Türkçe müziği elektronik müziğe taşımak yalnızca bir remix meselesi değil; Türkçenin, yerel müzikal hafızanın ve elektronik müziğin aynı sahnede doğal bir şekilde var olabileceğini göstermek. Hedefi, bu yaklaşımı Türkiye'deki kulüp kültürünün ötesine taşıyarak uluslararası elektronik müzik kitlesiyle buluşturmak.",
-                    "Yaratıcı yaklaşımının merkezinde ise bir motto var: “Creating things you wish existed.” Var olanı tekrarlamak yerine, insanların duymak isteyip de ortada olmayan müziği üretmek.",
-                    "\"Türkçe müziğin elektronik müzikte daha fazla yer bulması gerektiğine inanıyorum. Tanıdık vokallerin, Türkçenin kendine özgü karakterinin ve sert elektronik sound'ların bir araya geldiği bir alan yaratmak istiyorum.",
-                    "Amacım yalnızca sevilen parçaları remixlemek değil; Türkçe müziği kulüp kültürünün doğal bir parçası hâline getirmek ve kendi orijinal üretimlerimle bu dünyaya katkıda bulunmak.",
-                    "Benim için yaratıcılık, zaten var olanı tekrarlamak değil, eksikliğini hissettiğin şeyi üretmek.\""
-                ],
-                en: [
-                    "MERTMERIC is a DJ, producer and artist bringing the character of Turkish music into harder electronic territory.",
-                    "With over ten years of music-making experience and three years dedicated to electronic music, he is developing a sound across Turkish Bounce, Hard Techno and Hard Trance. His productions are driven by high energy, hard-hitting textures and the familiarity of vocal-led music.",
-                    "His work spans Turkish-language remixes and original productions, including “Pembe Mezarlık,” “Değmesin Ellerimiz,” “Mamakjump,” “NOT LIKE THIS,” “Afraid of the Darkness” and “HASSIKTIR.” Together, these projects reflect two sides of his approach: reimagining familiar Turkish music through electronic sounds and creating original material on his own terms.",
-                    "For MERTMERIC, bringing Turkish music into EDM is about more than remixing existing songs. It is about creating space for the Turkish language and its musical identity within contemporary electronic music, connecting local familiarity with the energy of club culture.",
-                    "His philosophy is straightforward: “Creating things you wish existed.” Rather than reproducing what is already out there, he aims to make the music people want to hear but can’t because it simply does not exist.",
-                    "\"I believe Turkish music deserves a stronger presence in electronic music. I want to create a space where the familiarity of Turkish vocals and the character of the language meet hard-hitting electronic sounds.",
-                    "My goal is not just to remix recognizable tracks, but to make Turkish music feel at home in club culture while contributing to that space through original productions of my own.",
-                    "To me, creativity means making what you feel is missing rather than repeating what already exists.\""
-                ]
-            }
+            longBio: { tr: [], en: [] }
         };
 
         function renderBioLang() {
@@ -233,7 +183,7 @@
                 }
             }
             if (d.name) {
-                document.title = d.name + ' — Biography';
+                document.title = d.name;
                 document.getElementById('bioLogoText').textContent = d.name;
             }
             if (d.brand) {
@@ -279,14 +229,17 @@
         (async function () {
             const url = "https://gjbvypvyikrwicdfhler.supabase.co";
             const anonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdqYnZ5cHZ5aWtyd2ljZGZobGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwMjI1MDksImV4cCI6MjEwODU5ODUwOX0.vVEDvyPbZauodNMPG8c_14yJiNqyIBTPmViKiYQJgsM";
-            if (!window.supabase) return;
             try {
-                const sb = window.supabase.createClient(url, anonKey);
-                const { data } = await sb.from('site_settings').select('*').eq('id', 1).maybeSingle();
+                const res = await fetch(url + "/rest/v1/site_settings?id=eq.1&select=*", {
+                    headers: { apikey: anonKey, Authorization: "Bearer " + anonKey }
+                });
+                if (!res.ok) return;
+                const rows = await res.json();
+                const data = Array.isArray(rows) ? rows[0] : null;
                 if (!data) return;
                 applyBioSettings(data);
                 try {
-                    localStorage.setItem('mert_cloud_settings_v2', JSON.stringify(data));
+                    localStorage.setItem("mert_cloud_settings_v2", JSON.stringify(data));
                 } catch (_) { }
             } catch (_) { }
         })();

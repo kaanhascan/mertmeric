@@ -42,47 +42,17 @@ const SITE = {
     lockImage: "",
     bgVideo: "",
     bgGif: "",
-    shortBio: {
-        tr: [
-            "MERTMERIC, Turkish Bounce, Hard Techno ve Hard Trance ekseninde üreten bir DJ, prodüktör ve müzisyen. 10 yılı aşkın müzik üretimi deneyimiyle Türkçeyi EDM ile birleştiren sound'u; yüksek tempo, sert elektronik dokular ve vokal odaklı yaklaşım üzerine kurulu.",
-            "Türkçe parçaları ve remixleri elektronik müzikle buluştururken kendi orijinal işlerini de geliştiren MERTMERIC'in amacı, Türkçeye EDM kültüründe daha güçlü bir yer açmak."
-        ],
-        en: [
-            "MERTMERIC is a DJ, producer and artist working across Turkish Bounce, Hard Techno and Hard Trance. With over a decade of music-making experience, his sound combines Turkish with high energy, hard-hitting electronic textures and vocal-driven arrangements.",
-            "Alongside Turkish tracks and remixes, MERTMERIC develops original productions with the aim of giving Turkish music a stronger presence within EDM culture."
-        ]
-    },
-    longBio: {
-        tr: [
-            "MERTMERIC, Türkçe müziğin kendine özgü karakterini sert elektronik sound'larla bir araya getiren bir DJ, prodüktör ve artist.",
-            "On yılı aşkın süredir müzik üreten MERTMERIC, son üç yıldır odağını elektronik müziğe yönelterek Turkish Bounce, Hard Techno ve Hard Trance arasında kendi müzikal kimliğini geliştiriyor. Üretimlerinde yüksek tempo, güçlü elektronik dokular ve vokallerin taşıdığı tanıdık duyguyu ön planda tutuyor.",
-            "“Pembe Mezarlık” ve “Değmesin Ellerimiz” gibi yüksek streamler yakalayan Türkçe parçalar üzerinden şekillenen remix yaklaşımının yanında “NOT LIKE THIS”, “MAMAKJUMP”, “Afraid of the Darkness” ve “HASSIKTIR” gibi orijinal çalışmalarıyla da kendi sound'unu ortaya koyuyor.",
-            "MERTMERIC için Türkçe müziği elektronik müziğe taşımak yalnızca bir remix meselesi değil; Türkçenin, yerel müzikal hafızanın ve elektronik müziğin aynı sahnede doğal bir şekilde var olabileceğini göstermek. Hedefi, bu yaklaşımı Türkiye'deki kulüp kültürünün ötesine taşıyarak uluslararası elektronik müzik kitlesiyle buluşturmak.",
-            "Yaratıcı yaklaşımının merkezinde ise bir motto var: “Creating things you wish existed.” Var olanı tekrarlamak yerine, insanların duymak isteyip de ortada olmayan müziği üretmek.",
-            "\"Türkçe müziğin elektronik müzikte daha fazla yer bulması gerektiğine inanıyorum. Tanıdık vokallerin, Türkçenin kendine özgü karakterinin ve sert elektronik sound'ların bir araya geldiği bir alan yaratmak istiyorum.",
-            "Amacım yalnızca sevilen parçaları remixlemek değil; Türkçe müziği kulüp kültürünün doğal bir parçası hâline getirmek ve kendi orijinal üretimlerimle bu dünyaya katkıda bulunmak.",
-            "Benim için yaratıcılık, zaten var olanı tekrarlamak değil, eksikliğini hissettiğin şeyi üretmek.\""
-        ],
-        en: [
-            "MERTMERIC is a DJ, producer and artist bringing the character of Turkish music into harder electronic territory.",
-            "With over ten years of music-making experience and three years dedicated to electronic music, he is developing a sound across Turkish Bounce, Hard Techno and Hard Trance. His productions are driven by high energy, hard-hitting textures and the familiarity of vocal-led music.",
-            "His work spans Turkish-language remixes and original productions, including “Pembe Mezarlık,” “Değmesin Ellerimiz,” “Mamakjump,” “NOT LIKE THIS,” “Afraid of the Darkness” and “HASSIKTIR.” Together, these projects reflect two sides of his approach: reimagining familiar Turkish music through electronic sounds and creating original material on his own terms.",
-            "For MERTMERIC, bringing Turkish music into EDM is about more than remixing existing songs. It is about creating space for the Turkish language and its musical identity within contemporary electronic music, connecting local familiarity with the energy of club culture.",
-            "His philosophy is straightforward: “Creating things you wish existed.” Rather than reproducing what is already out there, he aims to make the music people want to hear but can’t because it simply does not exist.",
-            "\"I believe Turkish music deserves a stronger presence in electronic music. I want to create a space where the familiarity of Turkish vocals and the character of the language meet hard-hitting electronic sounds.",
-            "My goal is not just to remix recognizable tracks, but to make Turkish music feel at home in club culture while contributing to that space through original productions of my own.",
-            "To me, creativity means making what you feel is missing rather than repeating what already exists.\""
-        ]
-    },
+    shortBio: { tr: [], en: [] },
+    longBio: { tr: [], en: [] },
     tracks: [],
     media: [],
     albums: [],
-    email: "keystance@outlook.com",
+    email: "",
     links: {
-        instagram: "https://www.instagram.com/mertmeric.7/",
-        soundcloud: "https://soundcloud.com/mertmeric7",
-        spotify: "https://open.spotify.com/intl-tr/artist/7AFLX94fKBZWjj0Mq9qQ3O?si=YJnObyGaTROUK6ynG6uHDA",
-        youtube: "https://youtu.be/DXFqUtnAJLE?si=05i51MZduxPMkPzI",
+        instagram: "",
+        soundcloud: "",
+        spotify: "",
+        youtube: "",
         uncompressed: ""
     },
     dockIcons: {
@@ -308,6 +278,7 @@ function applySettingsObject(s) {
     }
 }
 
+let settingsLoadedOnce = false;
 let tracksLoadedOnce = false;
 
 function applyTracksArray(tracksData) {
@@ -326,6 +297,8 @@ try {
     const cachedSettings = JSON.parse(localStorage.getItem('mert_cloud_settings_v2') || 'null');
     if (cachedSettings) {
         applySettingsObject(cachedSettings);
+        settingsLoadedOnce = true;
+        preloadImageInMemory(SITE.logoImage);
         Object.values(SITE.dockIcons).forEach(preloadImageInMemory);
     }
     const cachedTracks = JSON.parse(localStorage.getItem('mert_cloud_tracks_v1') || 'null');
@@ -362,6 +335,8 @@ async function syncFromSupabase() {
         const settingsData = settingsRes?.data;
         if (settingsData) {
             applySettingsObject(settingsData);
+            settingsLoadedOnce = true;
+            preloadImageInMemory(SITE.logoImage);
             Object.values(SITE.dockIcons).forEach(preloadImageInMemory);
             try {
                 localStorage.setItem('mert_cloud_settings_v2', JSON.stringify(settingsData));
@@ -546,7 +521,7 @@ function applyMedia() {
     } else {
         logoImg.style.display = 'none';
         if (logoWrap) logoWrap.style.display = 'none';
-        logoTxt.style.display = 'block';
+        logoTxt.style.display = settingsLoadedOnce ? 'block' : 'none';
         logoTxt.textContent = SITE.name;
     }
 
