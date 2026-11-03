@@ -160,6 +160,9 @@
             return path;
         }
 
+        let activeBioBg = '';
+        const bioBgBlobCache = new Map();
+
         function applyBioSettings(d) {
             if (!d || typeof d !== 'object') return;
             if (d.logo_image) {
@@ -174,9 +177,37 @@
                 const isVid = /\.(mp4|webm|mov|m4v)(\?.*)?$/i.test(cloudBg);
                 if (isVid) {
                     const v = document.getElementById('bioBgv');
-                    if (v.getAttribute('src') !== cloudBg) v.src = cloudBg;
                     v.style.display = 'block';
+                    if (activeBioBg !== cloudBg) {
+                        activeBioBg = cloudBg;
+                        const cachedBlob = bioBgBlobCache.get(cloudBg);
+                        if (cachedBlob) {
+                            v.src = cachedBlob;
+                            v.play().catch(() => { });
+                        } else {
+                            fetch(cloudBg)
+                                .then(r => {
+                                    if (!r.ok) throw new Error('status ' + r.status);
+                                    return r.blob();
+                                })
+                                .then(blob => {
+                                    const blobUrl = URL.createObjectURL(blob);
+                                    bioBgBlobCache.set(cloudBg, blobUrl);
+                                    if (activeBioBg === cloudBg) {
+                                        v.src = blobUrl;
+                                        v.play().catch(() => { });
+                                    }
+                                })
+                                .catch(() => {
+                                    if (activeBioBg === cloudBg) {
+                                        if (v.getAttribute('src') !== cloudBg) v.src = cloudBg;
+                                        v.play().catch(() => { });
+                                    }
+                                });
+                        }
+                    }
                 } else {
+                    activeBioBg = cloudBg;
                     const g = document.getElementById('bggif');
                     if (g.getAttribute('src') !== cloudBg) g.src = cloudBg;
                     g.style.display = 'block';
