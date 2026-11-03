@@ -6,14 +6,23 @@ const SUPABASE_CONFIG = {
 
 function getProxiedMediaUrl(url) {
     if (!url || typeof url !== 'string') return url;
-    if (typeof window !== 'undefined' && window.location && window.location.protocol === 'file:') {
-        return url;
-    }
     const prefix = `${SUPABASE_CONFIG.url}/storage/v1/object/public/${SUPABASE_CONFIG.bucket}/`;
-    if (url.startsWith(prefix)) {
-        return '/storage/' + url.slice(prefix.length);
+    const isLocal = typeof window !== 'undefined' && window.location && (
+        window.location.protocol === 'file:' ||
+        window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1'
+    );
+    const domainPrefix = 'https://mertmeric.music/storage/';
+    let path = url;
+    if (path.startsWith(prefix)) {
+        path = '/storage/' + path.slice(prefix.length);
+    } else if (path.startsWith(domainPrefix)) {
+        path = '/storage/' + path.slice(domainPrefix.length);
     }
-    return url;
+    if (isLocal && path.startsWith('/storage/')) {
+        return 'https://mertmeric.music' + path;
+    }
+    return path;
 }
 
 const SITE = {
@@ -144,6 +153,43 @@ function safeUrl(u) {
     if (!u) return '';
     if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
     try { return new URL(u).href; } catch (_) { return ''; }
+}
+
+const TRACK_PLATFORM_ICONS = {
+    youtube: getProxiedMediaUrl("/storage/icons/1793126833240_e9hlhb.png"),
+    spotify: getProxiedMediaUrl("/storage/icons/1793126788498_vznety.png"),
+    soundcloud: getProxiedMediaUrl("/storage/icons/1793126781236_6v33is.png")
+};
+
+function parseTrackLinks(raw) {
+    const res = { youtube: '', spotify: '', soundcloud: '' };
+    if (!raw || typeof raw !== 'string') return res;
+    const trimmed = raw.trim();
+    if (!trimmed) return res;
+    if (trimmed.startsWith('{')) {
+        try {
+            const parsed = JSON.parse(trimmed);
+            if (parsed && typeof parsed === 'object') {
+                res.youtube = String(parsed.youtube || '').trim();
+                res.spotify = String(parsed.spotify || '').trim();
+                res.soundcloud = String(parsed.soundcloud || '').trim();
+                return res;
+            }
+        } catch (_) { }
+    }
+    const lower = trimmed.toLowerCase();
+    if (lower.includes('youtu.be') || lower.includes('youtube.com')) res.youtube = trimmed;
+    else if (lower.includes('spotify.com')) res.spotify = trimmed;
+    else if (lower.includes('soundcloud.com')) res.soundcloud = trimmed;
+    return res;
+}
+
+function serializeTrackLinks(linksObj) {
+    const youtube = String(linksObj?.youtube || '').trim();
+    const spotify = String(linksObj?.spotify || '').trim();
+    const soundcloud = String(linksObj?.soundcloud || '').trim();
+    if (!youtube && !spotify && !soundcloud) return null;
+    return JSON.stringify({ youtube, spotify, soundcloud });
 }
 
 function makeLiquidMap(w, h, r, bezel) {
@@ -546,19 +592,24 @@ function renderTrackWidget() {
     }
 
     const cur = Math.min(30, trackAudio.currentTime || 0);
-    const trkHref = safeUrl(trk.link);
+    const links = parseTrackLinks(trk.link);
+    const activePlatforms = [
+        { key: 'youtube', label: 'YouTube', href: safeUrl(links.youtube), icon: TRACK_PLATFORM_ICONS.youtube },
+        { key: 'spotify', label: 'Spotify', href: safeUrl(links.spotify), icon: TRACK_PLATFORM_ICONS.spotify },
+        { key: 'soundcloud', label: 'SoundCloud', href: safeUrl(links.soundcloud), icon: TRACK_PLATFORM_ICONS.soundcloud }
+    ].filter(p => Boolean(p.href));
     wrap.innerHTML = `
-        <div class="trk-main ${trkHref ? 'has-link' : ''}">
+        <div class="trk-main ${activePlatforms.length ? 'has-link-' + activePlatforms.length : ''}">
             <img class="trk-cover" src="${esc(trk.cover)}" alt="${esc(trk.title)}">
             <div class="trk-meta">
                 <div class="trk-title" title="${esc(trk.title)}">${esc(trk.title)}</div>
                 <div class="trk-sub">30s Preview</div>
             </div>
         </div>
-        ${trkHref ? `
-        <a class="trk-link" href="${esc(trkHref)}" target="_blank" rel="noopener" title="Parçayı dinle" aria-label="Track link">
-            <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-        </a>` : ''}
+        ${activePlatforms.length ? `
+        <div class="trk-links" aria-label="Track platform links">
+            ${activePlatforms.map(p => `<a class="trk-plat-btn" data-plat="${p.key}" href="${esc(p.href)}" target="_blank" rel="noopener" title="${p.label}" aria-label="${p.label}"><img src="${esc(p.icon)}" alt="${p.label}"></a>`).join('')}
+        </div>` : ''}
 
         <div class="trk-prog">
             <div class="trk-times">
@@ -1158,7 +1209,11 @@ const APPS = {
                         <h4>Add 30s Track Preview</h4>
                         <div class="form-group">
                             <input class="inp" id="admTrkTitle" placeholder="Track Name (e.g. MERTMERIC — ID)">
-                            <input class="inp" id="admTrkLink" placeholder="Şarkı linki">
+                            <div class="adm-row">
+                                <input class="inp" id="admTrkYt" placeholder="YouTube linki" style="flex:1">
+                                <input class="inp" id="admTrkSp" placeholder="Spotify linki" style="flex:1">
+                                <input class="inp" id="admTrkSc" placeholder="SoundCloud linki" style="flex:1">
+                            </div>
                             <div class="adm-row">
                                 <label class="btn-pill" style="cursor:pointer;flex:1;text-align:center">
                                     <span id="admCovBtnTxt">Select Cover Photo</span>
@@ -1176,7 +1231,9 @@ const APPS = {
                     <div class="adm-sec">
                         <h4>Tracks (${SITE.tracks.length})</h4>
                         <div style="max-height:300px;overflow-y:auto">
-                            ${SITE.tracks.map((t, idx) => `
+                            ${SITE.tracks.map((t, idx) => {
+                                const tLinks = parseTrackLinks(t.link);
+                                return `
                                 <div class="adm-item" style="flex-wrap:wrap">
                                     <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1">
                                         <span style="font-size:11px;color:rgba(255,255,255,.5);width:16px">${idx + 1}</span>
@@ -1188,12 +1245,15 @@ const APPS = {
                                         <button class="btn-pill adm-trk-down" data-idx="${idx}" ${idx === SITE.tracks.length - 1 ? 'disabled style="opacity:.35"' : ''}>↓</button>
                                         <button class="adm-del adm-del-trk" data-idx="${idx}">Delete</button>
                                     </div>
-                                    <div class="adm-row" style="width:100%;margin:6px 0 0">
-                                        <input class="inp" data-trk-link="${idx}" value="${esc(t.link || '')}" placeholder="Şarkı linki" style="flex:1">
+                                    <div class="adm-row" style="width:100%;margin:6px 0 0;flex-wrap:wrap">
+                                        <input class="inp" data-trk-yt="${idx}" value="${esc(tLinks.youtube)}" placeholder="YouTube linki" style="flex:1;min-width:120px">
+                                        <input class="inp" data-trk-sp="${idx}" value="${esc(tLinks.spotify)}" placeholder="Spotify linki" style="flex:1;min-width:120px">
+                                        <input class="inp" data-trk-sc="${idx}" value="${esc(tLinks.soundcloud)}" placeholder="SoundCloud linki" style="flex:1;min-width:120px">
                                         <button class="btn-pill active adm-trk-savelink" data-idx="${idx}">Kaydet</button>
                                     </div>
                                 </div>
-                            `).join('')}
+                            `;
+                            }).join('')}
                         </div>
                     </div>
                 `;
@@ -1540,7 +1600,11 @@ const APPS = {
                         const nextOrder = SITE.tracks.reduce((m, t) => Math.max(m, t.sort_order ?? 0), -1) + 1;
                         const { error } = await sb.from('tracks').insert([{
                             title,
-                            link: w.querySelector('#admTrkLink').value.trim() || null,
+                            link: serializeTrackLinks({
+                            youtube: w.querySelector('#admTrkYt')?.value,
+                            spotify: w.querySelector('#admTrkSp')?.value,
+                            soundcloud: w.querySelector('#admTrkSc')?.value
+                        }),
                             sort_order: nextOrder,
                             cover: upCov.publicUrl,
                             cover_path: upCov.storagePath,
@@ -1592,9 +1656,13 @@ const APPS = {
                         const idx = Number(btn.dataset.idx);
                         const trk = SITE.tracks[idx];
                         if (!trk) return;
-                        const val = w.querySelector(`[data-trk-link="${idx}"]`).value.trim();
+                        const serialized = serializeTrackLinks({
+                            youtube: w.querySelector(`[data-trk-yt="${idx}"]`)?.value,
+                            spotify: w.querySelector(`[data-trk-sp="${idx}"]`)?.value,
+                            soundcloud: w.querySelector(`[data-trk-sc="${idx}"]`)?.value
+                        });
                         btn.textContent = '...';
-                        const { error } = await sb.from('tracks').update({ link: val || null }).eq('id', trk.id);
+                        const { error } = await sb.from('tracks').update({ link: serialized }).eq('id', trk.id);
                         if (error) {
                             trkStatus.textContent = 'Hata: ' + error.message;
                             trkStatus.classList.add('on');

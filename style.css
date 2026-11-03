@@ -1,5 +1,3 @@
-
-
 :root {
     --ui-scale: 1;
     --chrome-1: #141519;
@@ -2257,54 +2255,75 @@ html:has(.bio-page-body),
     position: relative;
 }
 
-.trk-main.has-link {
-    padding-right: 42px;
+.trk-main.has-link-1 {
+    padding-right: 44px;
 }
 
-.trk-link {
+.trk-main.has-link-2 {
+    padding-right: 84px;
+}
+
+.trk-main.has-link-3 {
+    padding-right: 124px;
+}
+
+.trk-links {
     position: absolute;
-    top: 0;
+    top: 2px;
     right: 0;
-    width: 32px;
-    height: 32px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.trk-plat-btn {
+    width: 34px;
+    height: 34px;
     display: grid;
     place-items: center;
-    border-radius: 50%;
-    color: #fff;
     text-decoration: none;
-    background: linear-gradient(145deg, rgba(255, 255, 255, .2), rgba(255, 255, 255, .05));
-    border: 1px solid rgba(255, 255, 255, .3);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5), 0 4px 10px rgba(0, 0, 0, .3);
-    transition: transform .2s cubic-bezier(.2, .8, .2, 1), background .2s;
+    cursor: pointer;
+    transition: transform .2s cubic-bezier(.2, .8, .2, 1);
 }
 
-.trk-link svg {
-    width: 15px;
-    height: 15px;
-    stroke: currentColor;
-    fill: none;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
+.trk-plat-btn img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    filter:
+        drop-shadow(0 -1px 0 rgba(255, 255, 255, .75)) drop-shadow(0 0 10px rgba(135, 180, 255, .38)) drop-shadow(0 4px 10px rgba(0, 0, 0, .5));
+    transition: filter .2s ease;
 }
 
-.trk-link:hover {
-    transform: scale(1.1);
-    background: rgba(255, 255, 255, .24);
+.trk-plat-btn:hover {
+    transform: translateY(-2px) scale(1.1);
+}
+
+.trk-plat-btn:hover img {
+    filter:
+        drop-shadow(0 -1.5px 0 rgba(255, 255, 255, .95)) drop-shadow(0 0 14px rgba(150, 195, 255, .65)) drop-shadow(0 6px 14px rgba(0, 0, 0, .55));
 }
 
 @media (max-width: 768px) {
-    .trk-link {
+    .trk-links {
+        gap: 6px;
+    }
+
+    .trk-plat-btn {
         width: 28px;
         height: 28px;
     }
 
-    .trk-link svg {
-        width: 13px;
-        height: 13px;
+    .trk-main.has-link-1 {
+        padding-right: 36px;
     }
 
-    .trk-main.has-link {
-        padding-right: 36px;
+    .trk-main.has-link-2 {
+        padding-right: 68px;
+    }
+
+    .trk-main.has-link-3 {
+        padding-right: 100px;
     }
 }
