@@ -651,18 +651,13 @@ function renderTrackWidget() {
         { key: 'soundcloud', label: 'SoundCloud', href: safeUrl(links.soundcloud), icon: SITE.dockIcons.soundcloud || TRACK_PLATFORM_ICONS.soundcloud }
     ].filter(p => Boolean(p.href));
     wrap.innerHTML = `
-        <div class="trk-main ${activePlatforms.length ? 'has-link-' + activePlatforms.length : ''}">
+        <div class="trk-main">
             <img class="trk-cover" src="${esc(trk.cover)}" alt="${esc(trk.title)}">
             <div class="trk-meta">
                 <div class="trk-title" title="${esc(trk.title)}">${esc(trk.title)}</div>
                 <div class="trk-sub">30s Preview</div>
             </div>
         </div>
-        ${activePlatforms.length ? `
-        <div class="trk-links" aria-label="Track platform links">
-            ${activePlatforms.map(p => `<a class="trk-plat-btn" data-plat="${p.key}" href="${esc(p.href)}" target="_blank" rel="noopener" title="${p.label}" aria-label="${p.label}"><img src="${esc(p.icon)}" alt="${p.label}"></a>`).join('')}
-        </div>` : ''}
-
         <div class="trk-prog">
             <div class="trk-times">
                 <span id="trkTime">${formatDuration(cur)}</span>
@@ -688,7 +683,9 @@ function renderTrackWidget() {
                     <svg viewBox="0 0 24 24"><rect x="16" y="5" width="3" height="14" rx="1"/><path d="M5 5.5v13a1 1 0 0 0 1.6.8l9-6.5a1 1 0 0 0 0-1.6l-9-6.5A1 1 0 0 0 5 5.5z"/></svg>
                 </button>
             </div>
-            <span></span>
+            <div class="trk-links" aria-label="Track platform links">
+                ${activePlatforms.map(p => `<a class="trk-plat-btn" data-plat="${p.key}" href="${esc(p.href)}" target="_blank" rel="noopener" title="${p.label}" aria-label="${p.label}"><img src="${esc(p.icon)}" alt="${p.label}"></a>`).join('')}
+            </div>
         </div>
     `;
 
