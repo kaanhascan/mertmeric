@@ -161,6 +161,16 @@ const TRACK_PLATFORM_ICONS = {
     soundcloud: getProxiedMediaUrl("/storage/icons/1793126781236_6v33is.png")
 };
 
+const memoryImageCache = new Map();
+function preloadImageInMemory(src) {
+    if (!src || memoryImageCache.has(src)) return;
+    const img = new Image();
+    img.decoding = 'async';
+    img.src = src;
+    memoryImageCache.set(src, img);
+}
+Object.values(TRACK_PLATFORM_ICONS).forEach(preloadImageInMemory);
+
 function parseTrackLinks(raw) {
     const res = { youtube: '', spotify: '', soundcloud: '' };
     if (!raw || typeof raw !== 'string') return res;
@@ -298,11 +308,31 @@ function applySettingsObject(s) {
     }
 }
 
+let tracksLoadedOnce = false;
+
+function applyTracksArray(tracksData) {
+    if (!Array.isArray(tracksData)) return;
+    SITE.tracks = tracksData.map(t => ({
+        ...t,
+        audio: getProxiedMediaUrl(t.audio),
+        cover: getProxiedMediaUrl(t.cover)
+    }));
+    SITE.tracks.forEach(t => preloadImageInMemory(t.cover));
+}
+
 try {
     localStorage.removeItem('mert_site_cache_v1');
     localStorage.removeItem('mert_cloud_texts_v1');
     const cachedSettings = JSON.parse(localStorage.getItem('mert_cloud_settings_v2') || 'null');
-    if (cachedSettings) applySettingsObject(cachedSettings);
+    if (cachedSettings) {
+        applySettingsObject(cachedSettings);
+        Object.values(SITE.dockIcons).forEach(preloadImageInMemory);
+    }
+    const cachedTracks = JSON.parse(localStorage.getItem('mert_cloud_tracks_v1') || 'null');
+    if (Array.isArray(cachedTracks) && cachedTracks.length) {
+        applyTracksArray(cachedTracks);
+        tracksLoadedOnce = true;
+    }
 } catch (_) { }
 
 const sb = window.supabase
@@ -315,30 +345,48 @@ let adminTab = 'media';
 async function syncFromSupabase() {
     if (!sb) return;
     try {
-        const earlyPromise = window.__earlySettingsPromise;
+        const earlySettings = window.__earlySettingsPromise;
+        const earlyTracks = window.__earlyTracksPromise;
         window.__earlySettingsPromise = null;
-        const settingsRes = earlyPromise
-            ? { data: await earlyPromise }
-            : await sb.from('site_settings').select('*').eq('id', 1).maybeSingle();
+        window.__earlyTracksPromise = null;
+
+        const [settingsRes, tracksRes] = await Promise.all([
+            earlySettings
+                ? earlySettings.then(data => ({ data }))
+                : sb.from('site_settings').select('*').eq('id', 1).maybeSingle(),
+            earlyTracks
+                ? earlyTracks.then(data => ({ data }))
+                : sb.from('tracks').select('*').order('sort_order', { ascending: true }).order('created_at', { ascending: false })
+        ]);
+
         const settingsData = settingsRes?.data;
         if (settingsData) {
             applySettingsObject(settingsData);
+            Object.values(SITE.dockIcons).forEach(preloadImageInMemory);
             try {
                 localStorage.setItem('mert_cloud_settings_v2', JSON.stringify(settingsData));
             } catch (_) { }
-            applyMedia();
-            buildDock();
         }
+
+        const tracksData = tracksRes?.data;
+        if (Array.isArray(tracksData)) {
+            applyTracksArray(tracksData);
+            tracksLoadedOnce = true;
+            try {
+                localStorage.setItem('mert_cloud_tracks_v1', JSON.stringify(tracksData));
+            } catch (_) { }
+        }
+
+        applyMedia();
+        buildDock();
 
         const [
             { data: albumsData },
             { data: mediaData },
-            { data: tracksData },
             { data: sessionRes }
         ] = await Promise.all([
             sb.from('albums').select('*').order('created_at', { ascending: true }),
             sb.from('media_items').select('*').order('created_at', { ascending: false }),
-            sb.from('tracks').select('*').order('sort_order', { ascending: true }).order('created_at', { ascending: false }),
             sb.auth.getSession()
         ]);
 
@@ -346,9 +394,7 @@ async function syncFromSupabase() {
 
         if (Array.isArray(albumsData)) SITE.albums = albumsData.map(a => ({ ...a, cover: getProxiedMediaUrl(a.cover) }));
         if (Array.isArray(mediaData)) SITE.media = mediaData.map(m => ({ ...m, src: getProxiedMediaUrl(m.src) }));
-        if (Array.isArray(tracksData)) SITE.tracks = tracksData.map(t => ({ ...t, audio: getProxiedMediaUrl(t.audio), cover: getProxiedMediaUrl(t.cover) }));
 
-        applyMedia();
         refreshOpenWindows();
     } catch (_) { }
 }
@@ -576,7 +622,9 @@ function renderTrackWidget() {
     if (!wrap) return;
 
     if (!SITE.tracks.length) {
-        wrap.innerHTML = `<div style="font-size:12px;color:rgba(255,255,255,.5)">Henüz parça eklenmedi.</div>`;
+        if (tracksLoadedOnce) {
+            wrap.innerHTML = `<div style="font-size:12px;color:rgba(255,255,255,.5)">Henüz parça eklenmedi.</div>`;
+        }
         return;
     }
 
@@ -594,9 +642,9 @@ function renderTrackWidget() {
     const cur = Math.min(30, trackAudio.currentTime || 0);
     const links = parseTrackLinks(trk.link);
     const activePlatforms = [
-        { key: 'youtube', label: 'YouTube', href: safeUrl(links.youtube), icon: TRACK_PLATFORM_ICONS.youtube },
-        { key: 'spotify', label: 'Spotify', href: safeUrl(links.spotify), icon: TRACK_PLATFORM_ICONS.spotify },
-        { key: 'soundcloud', label: 'SoundCloud', href: safeUrl(links.soundcloud), icon: TRACK_PLATFORM_ICONS.soundcloud }
+        { key: 'youtube', label: 'YouTube', href: safeUrl(links.youtube), icon: SITE.dockIcons.youtube || TRACK_PLATFORM_ICONS.youtube },
+        { key: 'spotify', label: 'Spotify', href: safeUrl(links.spotify), icon: SITE.dockIcons.spotify || TRACK_PLATFORM_ICONS.spotify },
+        { key: 'soundcloud', label: 'SoundCloud', href: safeUrl(links.soundcloud), icon: SITE.dockIcons.soundcloud || TRACK_PLATFORM_ICONS.soundcloud }
     ].filter(p => Boolean(p.href));
     wrap.innerHTML = `
         <div class="trk-main ${activePlatforms.length ? 'has-link-' + activePlatforms.length : ''}">
@@ -1232,8 +1280,8 @@ const APPS = {
                         <h4>Tracks (${SITE.tracks.length})</h4>
                         <div style="max-height:300px;overflow-y:auto">
                             ${SITE.tracks.map((t, idx) => {
-                                const tLinks = parseTrackLinks(t.link);
-                                return `
+                    const tLinks = parseTrackLinks(t.link);
+                    return `
                                 <div class="adm-item" style="flex-wrap:wrap">
                                     <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1">
                                         <span style="font-size:11px;color:rgba(255,255,255,.5);width:16px">${idx + 1}</span>
@@ -1253,7 +1301,7 @@ const APPS = {
                                     </div>
                                 </div>
                             `;
-                            }).join('')}
+                }).join('')}
                         </div>
                     </div>
                 `;
@@ -1601,10 +1649,10 @@ const APPS = {
                         const { error } = await sb.from('tracks').insert([{
                             title,
                             link: serializeTrackLinks({
-                            youtube: w.querySelector('#admTrkYt')?.value,
-                            spotify: w.querySelector('#admTrkSp')?.value,
-                            soundcloud: w.querySelector('#admTrkSc')?.value
-                        }),
+                                youtube: w.querySelector('#admTrkYt')?.value,
+                                spotify: w.querySelector('#admTrkSp')?.value,
+                                soundcloud: w.querySelector('#admTrkSc')?.value
+                            }),
                             sort_order: nextOrder,
                             cover: upCov.publicUrl,
                             cover_path: upCov.storagePath,
