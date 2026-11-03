@@ -269,16 +269,20 @@ let adminTab = 'media';
 async function syncFromSupabase() {
     if (!sb) return;
     try {
-        sb.from('site_settings').select('*').eq('id', 1).maybeSingle().then(({ data: settingsData }) => {
-            if (settingsData) {
-                applySettingsObject(settingsData);
-                try {
-                    localStorage.setItem('mert_cloud_settings_v2', JSON.stringify(settingsData));
-                } catch (_) { }
-                applyMedia();
-                buildDock();
-            }
-        });
+        const earlyPromise = window.__earlySettingsPromise;
+        window.__earlySettingsPromise = null;
+        const settingsRes = earlyPromise
+            ? { data: await earlyPromise }
+            : await sb.from('site_settings').select('*').eq('id', 1).maybeSingle();
+        const settingsData = settingsRes?.data;
+        if (settingsData) {
+            applySettingsObject(settingsData);
+            try {
+                localStorage.setItem('mert_cloud_settings_v2', JSON.stringify(settingsData));
+            } catch (_) { }
+            applyMedia();
+            buildDock();
+        }
 
         const [
             { data: albumsData },
@@ -346,20 +350,55 @@ function formatDuration(sec) {
     return `${m}:${s < 10 ? '0' : ''}${s}`;
 }
 
-function applyMedia() {
-    document.title = SITE.name;
-    $('#bn').textContent = SITE.brand;
+let lockImgLoaded = false;
+let lockImgLoadingSrc = '';
 
-    const hintSpan = $('#hint span');
-    if (hintSpan) hintSpan.textContent = SITE.unlockHint;
+function ensureLockImagePriority(src, onReady) {
+    if (!src) {
+        lockImgLoaded = true;
+        if (onReady) onReady();
+        return;
+    }
+    if (lockImgLoaded && lockImgLoadingSrc === src) {
+        if (onReady) onReady();
+        return;
+    }
+    lockImgLoadingSrc = src;
+    lockImgLoaded = false;
 
-    document.documentElement.style.setProperty(
-        '--lw',
-        SITE.lockImage ? `url("${SITE.lockImage}")` : 'none'
-    );
+    let preloadLink = document.getElementById('lockPreloadLink');
+    if (!preloadLink) {
+        preloadLink = document.createElement('link');
+        preloadLink.id = 'lockPreloadLink';
+        preloadLink.rel = 'preload';
+        preloadLink.as = 'image';
+        preloadLink.setAttribute('fetchpriority', 'high');
+        document.head.appendChild(preloadLink);
+    }
+    if (preloadLink.getAttribute('href') !== src) {
+        preloadLink.setAttribute('href', src);
+    }
 
+    const img = new Image();
+    img.fetchPriority = 'high';
+    img.decoding = 'async';
+    let done = false;
+    const finish = () => {
+        if (done) return;
+        done = true;
+        lockImgLoaded = true;
+        if (onReady) onReady();
+    };
+    img.onload = finish;
+    img.onerror = finish;
+    setTimeout(finish, 2500);
+    img.src = src;
+}
+
+function applyDesktopBg() {
     const v = $('#bgv');
     const g = $('#bggif');
+    if (!v || !g) return;
     const bgSrc = SITE.bgGif || SITE.bgVideo;
 
     if (!bgSrc) {
@@ -380,6 +419,25 @@ function applyMedia() {
         }
         v.style.display = 'block';
         g.style.display = 'none';
+    }
+}
+
+function applyMedia() {
+    document.title = SITE.name;
+    $('#bn').textContent = SITE.brand;
+
+    const hintSpan = $('#hint span');
+    if (hintSpan) hintSpan.textContent = SITE.unlockHint;
+
+    document.documentElement.style.setProperty(
+        '--lw',
+        SITE.lockImage ? `url("${SITE.lockImage}")` : 'none'
+    );
+
+    if (!unlocked && SITE.lockImage) {
+        ensureLockImagePriority(SITE.lockImage, applyDesktopBg);
+    } else {
+        applyDesktopBg();
     }
 
     const logoImg = $('#hubLogoImg');
@@ -586,6 +644,7 @@ function unlock() {
     unlocked = true;
     lock.classList.add('gone');
     lock.setAttribute('aria-hidden', 'true');
+    applyDesktopBg();
     const v = $('#bgv');
     if (v && v.style.display !== 'none') v.play().catch(() => { });
 }
