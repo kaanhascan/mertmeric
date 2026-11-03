@@ -462,6 +462,9 @@ function ensureLockImagePriority(src, onReady) {
     img.src = src;
 }
 
+const bgBlobCache = new Map();
+let activeBgTarget = '';
+
 function applyDesktopBg() {
     const v = $('#bgv');
     const g = $('#bggif');
@@ -469,23 +472,49 @@ function applyDesktopBg() {
     const bgSrc = SITE.bgGif || SITE.bgVideo;
 
     if (!bgSrc) {
+        activeBgTarget = '';
         g.style.display = 'none';
         v.style.display = 'none';
         v.pause();
     } else if (SITE.bgGif || detectMediaType(bgSrc) === 'photo') {
+        activeBgTarget = bgSrc;
         if (g.getAttribute('src') !== bgSrc) g.src = bgSrc;
         g.style.display = 'block';
         v.style.display = 'none';
         v.pause();
     } else {
-        if (v.getAttribute('src') !== bgSrc) {
-            v.src = bgSrc;
-            if (unlocked) v.play().catch(() => { });
-        } else if (unlocked && v.paused) {
-            v.play().catch(() => { });
-        }
         v.style.display = 'block';
         g.style.display = 'none';
+        if (activeBgTarget !== bgSrc) {
+            activeBgTarget = bgSrc;
+            const cachedBlobUrl = bgBlobCache.get(bgSrc);
+            if (cachedBlobUrl) {
+                if (v.getAttribute('src') !== cachedBlobUrl) v.src = cachedBlobUrl;
+                if (unlocked) v.play().catch(() => { });
+            } else {
+                fetch(bgSrc)
+                    .then(r => {
+                        if (!r.ok) throw new Error('status ' + r.status);
+                        return r.blob();
+                    })
+                    .then(blob => {
+                        const blobUrl = URL.createObjectURL(blob);
+                        bgBlobCache.set(bgSrc, blobUrl);
+                        if (activeBgTarget === bgSrc) {
+                            v.src = blobUrl;
+                            if (unlocked) v.play().catch(() => { });
+                        }
+                    })
+                    .catch(() => {
+                        if (activeBgTarget === bgSrc) {
+                            if (v.getAttribute('src') !== bgSrc) v.src = bgSrc;
+                            if (unlocked) v.play().catch(() => { });
+                        }
+                    });
+            }
+        } else if (unlocked && v.paused && v.getAttribute('src')) {
+            v.play().catch(() => { });
+        }
     }
 }
 
@@ -558,7 +587,7 @@ document.querySelectorAll('#hubLangSwitch .lang-flag-btn').forEach(btn => {
 let currentTrackIdx = 0;
 let trackVolume = 0.5;
 let trackAudio = new Audio();
-trackAudio.preload = 'metadata';
+trackAudio.preload = 'none';
 trackAudio.volume = trackVolume;
 let isTrackPlaying = false;
 
