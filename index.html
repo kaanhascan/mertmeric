@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>MERTMERIC</title>
     <meta name="theme-color" content="#000000">
+    <link rel="preload" as="image" href="lockimgcomp.png" fetchpriority="high">
     <link rel="preconnect" href="https://gjbvypvyikrwicdfhler.supabase.co" crossorigin>
     <link rel="preconnect" href="https://fonts.cdnfonts.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.cdnfonts.com/css/sf-pro-display" media="print" onload="this.media='all'">
@@ -13,43 +14,12 @@
         (function () {
             var sbUrl = "https://gjbvypvyikrwicdfhler.supabase.co";
             var sbKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdqYnZ5cHZ5aWtyd2ljZGZobGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwMjI1MDksImV4cCI6MjEwODU5ODUwOX0.vVEDvyPbZauodNMPG8c_14yJiNqyIBTPmViKiYQJgsM";
-            var prefix = sbUrl + "/storage/v1/object/public/media/";
-            var isLocal = location.protocol === "file:" || location.hostname === "localhost" || location.hostname === "127.0.0.1";
-            function toProxy(u) {
-                if (!u || typeof u !== "string") return "";
-                var dp = "https://mertmeric.music/storage/"; var p = u.indexOf(prefix) === 0 ? "/storage/" + u.slice(prefix.length) : (u.indexOf(dp) === 0 ? "/storage/" + u.slice(dp.length) : u);
-                if (isLocal && p.indexOf("/storage/") === 0) {
-                    return "https://mertmeric.music" + p;
-                }
-                return p;
-            }
-            function preloadLock(rawUrl) {
-                var u = toProxy(rawUrl);
-                if (!u) return;
-                document.documentElement.style.setProperty("--lw", 'url("' + u + '")');
-                var link = document.getElementById("lockPreloadLink");
-                if (!link) {
-                    link = document.createElement("link");
-                    link.id = "lockPreloadLink";
-                    link.rel = "preload";
-                    link.as = "image";
-                    link.setAttribute("fetchpriority", "high");
-                    document.head.appendChild(link);
-                }
-                if (link.getAttribute("href") !== u) link.setAttribute("href", u);
-            }
-            try {
-                var cached = JSON.parse(localStorage.getItem("mert_cloud_settings_v2") || "null");
-                if (cached && cached.lock_image) preloadLock(cached.lock_image);
-            } catch (_) { }
             try {
                 var hdrs = { apikey: sbKey, Authorization: "Bearer " + sbKey };
                 window.__earlySettingsPromise = fetch(sbUrl + "/rest/v1/site_settings?id=eq.1&select=*", {
                     headers: hdrs
                 }).then(function (r) { return r.ok ? r.json() : null; }).then(function (rows) {
-                    var d = Array.isArray(rows) ? rows[0] : null;
-                    if (d && d.lock_image) preloadLock(d.lock_image);
-                    return d;
+                    return Array.isArray(rows) ? rows[0] : null;
                 }).catch(function () { return null; });
                 window.__earlyTracksPromise = fetch(sbUrl + "/rest/v1/tracks?select=*&order=sort_order.asc,created_at.desc", {
                     headers: hdrs
@@ -57,12 +27,12 @@
             } catch (_) { }
         })();
     </script>
-    <link rel="stylesheet" href="style.css?v=9">
+    <link rel="stylesheet" href="style.css?v=10">
 </head>
 
 <body>
     <section id="lock" aria-label="Lock screen">
-        <div id="lockWall"></div>
+        <div id="lockWall"><img src="lockimgcomp.png" alt="" fetchpriority="high" decoding="sync"></div>
         <div id="ldate"></div>
         <div id="ltime" aria-label="Time"></div>
         <div id="hint">
@@ -176,7 +146,7 @@
     </svg>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="script.js?v=12"></script>
+    <script src="script.js?v=13"></script>
     <script>
         window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
     </script>

@@ -39,7 +39,7 @@ const SITE = {
     bioBadgeText: "BIOGRAPHY",
     bioFooterLabel: "Bookings & Management",
     logoImage: "",
-    lockImage: "",
+    lockImage: "lockimgcomp.png",
     bgVideo: "",
     bgGif: "",
     shortBio: { tr: [], en: [] },
@@ -227,7 +227,7 @@ function detectMediaType(src, mime) {
 
 function applySettingsObject(s) {
     if (!s) return;
-    SITE.lockImage = getProxiedMediaUrl(s.lock_image) || SITE.lockImage || '';
+    SITE.lockImage = "lockimgcomp.png";
     SITE.logoImage = getProxiedMediaUrl(s.logo_image) || SITE.logoImage || '';
 
     const cloudBg = getProxiedMediaUrl(s.bg_gif || s.bg_video || '');
