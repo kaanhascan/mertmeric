@@ -2500,7 +2500,34 @@ textarea.edu-inp {
     line-height: 1.55;
 }
 
-/* Admin Panel Education Tab */
+/* Admin Panel Education Tab & Responsive Containers */
+.w.maximized .body,
+.w.maximized[data-k="photos"] .body {
+    max-height: none !important;
+    height: auto !important;
+    flex: 1;
+    min-height: 0;
+}
+
+.adm-sub-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 10px;
+}
+
+.adm-sub-list .adm-sub-card {
+    margin-bottom: 0;
+}
+
+.adm-media-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 8px;
+}
+
+.adm-media-list .adm-item {
+    margin-bottom: 0;
+}
 .adm-sub-card {
     padding: 10px 12px;
     border-radius: 12px;

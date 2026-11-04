@@ -1229,7 +1229,7 @@ const APPS = {
 
     admin: {
         title: 'Cloud Admin Panel',
-        w: 620,
+        w: 720,
         render: () => {
             if (!adminSession) {
                 return `
@@ -1293,7 +1293,7 @@ const APPS = {
 
                     <div class="adm-sec">
                         <h4>Cloud Media (${SITE.media.length} items)</h4>
-                        <div style="max-height:200px;overflow-y:auto;padding-right:4px">
+                        <div class="adm-media-list">
                             ${SITE.media.map((m, idx) => `
                                 <div class="adm-item">
                                     <div style="display:flex;align-items:center;gap:10px;min-width:0">
@@ -1344,7 +1344,7 @@ const APPS = {
                     </div>
                     <div class="adm-sec">
                         <h4>Tracks (${SITE.tracks.length})</h4>
-                        <div style="max-height:300px;overflow-y:auto">
+                        <div class="adm-track-list">
                             ${SITE.tracks.map((t, idx) => {
                     const tLinks = parseTrackLinks(t.link);
                     return `
@@ -1381,7 +1381,7 @@ const APPS = {
                     { k: 'contact', label: 'Contact' }
                 ];
                 tabBody = `
-                    <div style="max-height:420px;overflow-y:auto;padding-right:4px">
+                    <div class="adm-scroll">
                         <div class="adm-sec">
                             <h4>1. Top Box Logo Image</h4>
                             <div class="adm-row">
@@ -1437,7 +1437,7 @@ const APPS = {
                 `;
             } else if (adminTab === 'texts') {
                 tabBody = `
-                    <div style="max-height:420px;overflow-y:auto;padding-right:4px">
+                    <div class="adm-scroll">
                         <div class="adm-sec">
                             <h4>1. Genel & Kilit Ekranı</h4>
                             <div class="form-group">
@@ -1529,7 +1529,7 @@ const APPS = {
                 const qs = Array.isArray(ec.questions) ? ec.questions : [];
                 const subs = Array.isArray(SITE.eduSubmissions) ? SITE.eduSubmissions : [];
                 tabBody = `
-                    <div style="max-height:440px;overflow-y:auto;padding-right:4px">
+                    <div class="adm-scroll">
                         <div class="adm-sec">
                             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
                                 <h4 style="margin:0">1. Gelen Eğitim Başvuruları (${subs.length})</h4>
@@ -1544,7 +1544,7 @@ const APPS = {
                                     </div>
                                 </div>
                             ` : ''}
-                            <div style="max-height:210px;overflow-y:auto;padding-right:2px">
+                            <div class="adm-sub-list">
                                 ${subs.length === 0 ? `<div style="font-size:12px;color:rgba(255,255,255,.5);padding:8px 0">Henüz başvuru gelmedi.</div>` : subs.map((sub, sIdx) => {
                                     const dt = sub.created_at ? new Date(sub.created_at).toLocaleString('tr-TR') : '';
                                     const ansList = Array.isArray(sub.answers) ? sub.answers : [];
@@ -2374,6 +2374,7 @@ function openApp(k) {
     btnClose.onclick = () => { w.remove(); updateDockIndicators(); };
     btnMin.onclick = () => { w.classList.add('minimized'); };
     btnMax.onclick = () => { w.classList.toggle('maximized'); };
+    h.ondblclick = e => { if (!e.target.closest('.traffic')) w.classList.toggle('maximized'); };
 
     w.addEventListener('pointerdown', () => w.style.zIndex = ++zIndexCounter);
 
