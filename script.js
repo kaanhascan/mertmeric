@@ -67,8 +67,8 @@ const SITE = {
         enabled: true,
         btn_tr: "DJ Eğitimi ↗",
         btn_en: "DJ Academy ↗",
-        badge_tr: "DJ ACADEMY",
-        badge_en: "DJ ACADEMY",
+        badge_tr: "Prodüksiyon Akademisi",
+        badge_en: "Production Academy",
         title_tr: "DJ & Prodüksiyon Eğitimi Başvuru Formu",
         title_en: "DJ & Production Academy Application",
         desc_tr: "Birebir DJ ve prodüksiyon eğitimleri için aşağıdaki formu doldurarak başvurunuzu iletebilirsiniz. Başvurunuz incelendikten sonra sizinle iletişime geçilecektir.",
@@ -310,6 +310,8 @@ function applySettingsObject(s) {
             SITE.eduConfig = {
                 ...SITE.eduConfig,
                 ...ec,
+                badge_tr: (!ec.badge_tr || ec.badge_tr === 'DJ ACADEMY') ? 'Prodüksiyon Akademisi' : ec.badge_tr,
+                badge_en: (!ec.badge_en || ec.badge_en === 'DJ ACADEMY') ? 'Production Academy' : ec.badge_en,
                 questions: Array.isArray(ec.questions) ? ec.questions : SITE.eduConfig.questions
             };
         }
@@ -1588,6 +1590,19 @@ const APPS = {
                                 </div>
                                 <div class="adm-row">
                                     <div style="flex:1">
+                                        <label style="font-size:11px;color:rgba(255,255,255,.65);display:block;margin-bottom:3px">Sağ Üst Rozet Yazısı (TR)</label>
+                                        <input class="inp" id="admEduBadgeTr" value="${esc(ec.badge_tr || 'Prodüksiyon Akademisi')}">
+                                    </div>
+                                    <div style="flex:1">
+                                        <label style="font-size:11px;color:rgba(255,255,255,.65);display:block;margin-bottom:3px">Sağ Üst Rozet Yazısı (EN)</label>
+                                        <input class="inp" id="admEduBadgeEn" value="${esc(ec.badge_en || 'Production Academy')}">
+                                    </div>
+                                </div>
+                                <div style="display:none"><div>
+                                    </div>
+                                </div>
+                                <div class="adm-row">
+                                    <div style="flex:1">
                                         <label style="font-size:11px;color:rgba(255,255,255,.65);display:block;margin-bottom:3px">Form Başlığı (TR)</label>
                                         <input class="inp" id="admEduTitleTr" value="${esc(ec.title_tr || '')}">
                                     </div>
@@ -2132,6 +2147,8 @@ const APPS = {
                     ec.enabled = Boolean(w.querySelector('#admEduEnabled')?.checked);
                     ec.btn_tr = w.querySelector('#admEduBtnTr')?.value.trim() || 'DJ Eğitimi ↗';
                     ec.btn_en = w.querySelector('#admEduBtnEn')?.value.trim() || 'DJ Academy ↗';
+                    ec.badge_tr = w.querySelector('#admEduBadgeTr')?.value.trim() || 'Prodüksiyon Akademisi';
+                    ec.badge_en = w.querySelector('#admEduBadgeEn')?.value.trim() || 'Production Academy';
                     ec.title_tr = w.querySelector('#admEduTitleTr')?.value.trim() || '';
                     ec.title_en = w.querySelector('#admEduTitleEn')?.value.trim() || '';
                     ec.desc_tr = w.querySelector('#admEduDescTr')?.value.trim() || '';

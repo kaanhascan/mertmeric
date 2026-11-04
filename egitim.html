@@ -135,8 +135,8 @@
             draftAnswers: {},
             config: {
                 enabled: true,
-                badge_tr: "DJ ACADEMY",
-                badge_en: "DJ ACADEMY",
+                badge_tr: "Prodüksiyon Eğitimi",
+                badge_en: "Production Academy",
                 title_tr: "DJ & Prodüksiyon Eğitimi Başvuru Formu",
                 title_en: "DJ & Production Academy Application",
                 desc_tr: "Birebir DJ ve prodüksiyon eğitimleri için aşağıdaki formu doldurarak başvurunuzu iletebilirsiniz. Başvurunuz incelendikten sonra sizinle iletişime geçilecektir.",
@@ -195,7 +195,7 @@
             if (backBtn) backBtn.textContent = isEn ? EDU_STATE.backEn : EDU_STATE.backTr;
 
             const badge = document.getElementById('eduBadge');
-            if (badge) badge.textContent = isEn ? (cfg.badge_en || 'DJ ACADEMY') : (cfg.badge_tr || 'DJ ACADEMY');
+            if (badge) badge.textContent = isEn ? (cfg.badge_en || 'Production Academy') : (cfg.badge_tr || 'Production Academy');
 
             document.querySelectorAll('#eduPageLangSwitch .lang-flag-btn').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.lang === EDU_STATE.lang);
@@ -379,6 +379,8 @@
                 EDU_STATE.config = {
                     ...EDU_STATE.config,
                     ...ec,
+                    badge_tr: (!ec.badge_tr || ec.badge_tr === 'DJ ACADEMY') ? 'Prodüksiyon Akademisi' : ec.badge_tr,
+                    badge_en: (!ec.badge_en || ec.badge_en === 'DJ ACADEMY') ? 'Production Academy' : ec.badge_en,
                     questions: Array.isArray(ec.questions) ? ec.questions : EDU_STATE.config.questions
                 };
             }
