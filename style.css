@@ -1264,6 +1264,8 @@ select {
     gap: 6px;
     padding: 6px 18px;
     overflow-x: auto;
+    max-width: 100%;
+    overscroll-behavior-x: contain;
     background: #000;
     flex: none;
     scrollbar-width: none;

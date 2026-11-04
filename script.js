@@ -1061,9 +1061,12 @@ const APPS = {
                 const list = getActiveMediaList();
                 const item = list[viewerIndex];
 
+                const strip = w.querySelector('#pviewStrip');
                 const activeThumb = w.querySelector('.pview-thumb.active');
-                if (activeThumb) {
-                    activeThumb.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                if (strip && activeThumb) {
+                    const offset = activeThumb.getBoundingClientRect().left - strip.getBoundingClientRect().left;
+                    const targetScroll = strip.scrollLeft + offset - (strip.clientWidth / 2) + (activeThumb.clientWidth / 2);
+                    strip.scrollTo({ left: Math.max(0, targetScroll), behavior: 'smooth' });
                 }
 
                 w.querySelector('#pviewDone').onclick = () => {
