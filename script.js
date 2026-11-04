@@ -62,8 +62,38 @@ const SITE = {
         youtube: "",
         photos: "",
         contact: ""
-    }
+    },
+    eduConfig: {
+        enabled: true,
+        btn_tr: "DJ Eğitimi ↗",
+        btn_en: "DJ Academy ↗",
+        badge_tr: "DJ ACADEMY",
+        badge_en: "DJ ACADEMY",
+        title_tr: "DJ & Prodüksiyon Eğitimi Başvuru Formu",
+        title_en: "DJ & Production Academy Application",
+        desc_tr: "Birebir DJ ve prodüksiyon eğitimleri için aşağıdaki formu doldurarak başvurunuzu iletebilirsiniz. Başvurunuz incelendikten sonra sizinle iletişime geçilecektir.",
+        desc_en: "Fill out the form below to apply for 1-on-1 DJ and music production coaching. We will get back to you after reviewing your application.",
+        submit_tr: "Başvuruyu Gönder ↗",
+        submit_en: "Submit Application ↗",
+        questions: [
+            { id: "q_name", label_tr: "Adınız Soyadınız", label_en: "Full Name", placeholder_tr: "Adınız ve soyadınız", placeholder_en: "Your full name", type: "text", options_tr: "", options_en: "", required: true },
+            { id: "q_contact", label_tr: "Telefon Numaranız (WhatsApp)", label_en: "Phone Number (WhatsApp)", placeholder_tr: "05XX XXX XX XX", placeholder_en: "+90 5XX XXX XX XX", type: "tel", options_tr: "", options_en: "", required: true },
+            { id: "q_ig", label_tr: "Instagram Kullanıcı Adınız", label_en: "Instagram Username", placeholder_tr: "@kullaniciadi", placeholder_en: "@username", type: "text", options_tr: "", options_en: "", required: true },
+            { id: "q_level", label_tr: "Mevcut Seviyeniz / İlgilendiğiniz Alan", label_en: "Current Experience Level / Track", placeholder_tr: "", placeholder_en: "", type: "select", options_tr: "Sıfırdan Başlangıç, Orta Seviye DJ, İleri Seviye / Prodüksiyon", options_en: "Beginner (From Scratch), Intermediate DJ, Advanced / Production", required: true },
+            { id: "q_note", label_tr: "Hedefleriniz & Eklemek İstedikleriniz", label_en: "Your Goals & Additional Notes", placeholder_tr: "Eğitimden beklentilerinizi, müzik tarzınızı veya sormak istediklerinizi yazabilirsiniz...", placeholder_en: "Tell us about your musical goals, favorite genres, or any questions...", type: "textarea", options_tr: "", options_en: "", required: false }
+        ]
+    },
+    eduSubmissions: [],
+    eduTableMissing: false
 };
+
+function buildDockIconsPayload() {
+    return {
+        ...SITE.dockIcons,
+        _uncompressed_url: SITE.links.uncompressed,
+        _edu_config: SITE.eduConfig
+    };
+}
 
 const ICONS = {
     photos: `<svg viewBox="0 0 64 64">
@@ -275,6 +305,14 @@ function applySettingsObject(s) {
         if (typeof s.dock_icons._uncompressed_url === 'string') {
             SITE.links.uncompressed = s.dock_icons._uncompressed_url;
         }
+        if (s.dock_icons._edu_config && typeof s.dock_icons._edu_config === 'object') {
+            const ec = s.dock_icons._edu_config;
+            SITE.eduConfig = {
+                ...SITE.eduConfig,
+                ...ec,
+                questions: Array.isArray(ec.questions) ? ec.questions : SITE.eduConfig.questions
+            };
+        }
     }
 }
 
@@ -369,6 +407,18 @@ async function syncFromSupabase() {
 
         if (Array.isArray(albumsData)) SITE.albums = albumsData.map(a => ({ ...a, cover: getProxiedMediaUrl(a.cover) }));
         if (Array.isArray(mediaData)) SITE.media = mediaData.map(m => ({ ...m, src: getProxiedMediaUrl(m.src) }));
+
+        if (adminSession) {
+            const subRes = await sb.from('edu_submissions').select('*').order('created_at', { ascending: false });
+            if (subRes.error) {
+                if (subRes.error.code === '42P01' || subRes.error.code === 'PGRST205' || String(subRes.error.message || '').includes('edu_submissions')) {
+                    SITE.eduTableMissing = true;
+                }
+            } else if (Array.isArray(subRes.data)) {
+                SITE.eduTableMissing = false;
+                SITE.eduSubmissions = subRes.data;
+            }
+        }
 
         refreshOpenWindows();
     } catch (_) { }
@@ -570,6 +620,18 @@ function applyMedia() {
     const bioBtn = $('#bioLinkTxt') || $('#bioLinkBox');
     if (bioBtn) {
         bioBtn.textContent = SITE.lang === 'en' ? SITE.longBioBtnTextEn : SITE.longBioBtnText;
+    }
+
+    const eduBox = $('#eduLinkBox');
+    const eduTxt = $('#eduLinkTxt');
+    if (eduBox) {
+        const showEdu = !SITE.eduConfig || SITE.eduConfig.enabled !== false;
+        eduBox.style.display = showEdu ? 'inline-flex' : 'none';
+        if (eduTxt && SITE.eduConfig) {
+            eduTxt.textContent = SITE.lang === 'en'
+                ? (SITE.eduConfig.btn_en || 'DJ Academy ↗')
+                : (SITE.eduConfig.btn_tr || 'DJ Eğitimi ↗');
+        }
     }
 
     renderTrackWidget();
@@ -1164,7 +1226,7 @@ const APPS = {
 
     admin: {
         title: 'Cloud Admin Panel',
-        w: 560,
+        w: 620,
         render: () => {
             if (!adminSession) {
                 return `
@@ -1459,8 +1521,136 @@ const APPS = {
                         <button type="button" class="btn-pill active" id="admSaveTxtBtn">Save All Texts & Links</button>
                     </div>
                 `;
+            } else if (adminTab === 'edu') {
+                const ec = SITE.eduConfig || {};
+                const qs = Array.isArray(ec.questions) ? ec.questions : [];
+                const subs = Array.isArray(SITE.eduSubmissions) ? SITE.eduSubmissions : [];
+                tabBody = `
+                    <div style="max-height:440px;overflow-y:auto;padding-right:4px">
+                        <div class="adm-sec">
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                                <h4 style="margin:0">1. Gelen Eğitim Başvuruları (${subs.length})</h4>
+                                <button type="button" class="btn-pill" id="admRefreshSubsBtn" style="padding:4px 10px;font-size:11px">↻ Yenile</button>
+                            </div>
+                            ${SITE.eduTableMissing ? `
+                                <div style="padding:10px;border-radius:10px;background:rgba(255,149,0,.14);border:1px solid rgba(255,149,0,.45);font-size:11.5px;line-height:1.5;margin-bottom:8px">
+                                    <b style="color:#ffcc00;display:block;margin-bottom:4px">⚠️ Başvuru Tablosu Kurulumu Gerekiyor (10 Saniye)</b>
+                                    Başvuruların kaydedilmesi için Supabase Dashboard → <b>SQL Editor</b> ekranına aşağıdaki kodu yapıştırıp <b>Run</b> butonuna basın:
+                                    <div style="margin-top:6px;display:flex;gap:6px">
+                                        <button type="button" class="btn-pill active" id="admCopySqlBtn" style="font-size:11px;padding:4px 10px">SQL Kodunu Kopyala</button>
+                                    </div>
+                                </div>
+                            ` : ''}
+                            <div style="max-height:210px;overflow-y:auto;padding-right:2px">
+                                ${subs.length === 0 ? `<div style="font-size:12px;color:rgba(255,255,255,.5);padding:8px 0">Henüz başvuru gelmedi.</div>` : subs.map((sub, sIdx) => {
+                                    const dt = sub.created_at ? new Date(sub.created_at).toLocaleString('tr-TR') : '';
+                                    const ansList = Array.isArray(sub.answers) ? sub.answers : [];
+                                    return `
+                                        <div class="adm-sub-card ${!sub.is_read ? 'unread' : ''}">
+                                            <div class="adm-sub-top">
+                                                <div style="font-size:11.5px;color:rgba(255,255,255,.75)">
+                                                    📅 ${esc(dt)}
+                                                    ${!sub.is_read ? `<span class="adm-badge-new">YENİ</span>` : ''}
+                                                </div>
+                                                <div style="display:flex;gap:6px">
+                                                    ${!sub.is_read ? `<button type="button" class="btn-pill adm-sub-read" data-idx="${sIdx}" style="padding:3px 8px;font-size:10.5px">Okundu ✓</button>` : ''}
+                                                    <button type="button" class="adm-del adm-sub-del" data-idx="${sIdx}" style="padding:3px 8px;font-size:10.5px">Sil</button>
+                                                </div>
+                                            </div>
+                                            <div class="adm-sub-ans">
+                                                ${ansList.map(a => `<div><b>${esc(a.question || '')}:</b> <span>${esc(a.answer || '—')}</span></div>`).join('')}
+                                            </div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+
+                        <div class="adm-sec">
+                            <h4>2. Eğitim Butonu & Sayfa Başlığı Ayarları</h4>
+                            <div class="form-group">
+                                <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#fff;cursor:pointer;margin-bottom:4px">
+                                    <input type="checkbox" id="admEduEnabled" ${ec.enabled !== false ? 'checked' : ''}>
+                                    Ana Sayfada Eğitim Başvuru Butonunu Göster
+                                </label>
+                                <div class="adm-row">
+                                    <div style="flex:1">
+                                        <label style="font-size:11px;color:rgba(255,255,255,.65);display:block;margin-bottom:3px">Ana Sayfa Buton Yazısı (TR)</label>
+                                        <input class="inp" id="admEduBtnTr" value="${esc(ec.btn_tr || 'DJ Eğitimi ↗')}">
+                                    </div>
+                                    <div style="flex:1">
+                                        <label style="font-size:11px;color:rgba(255,255,255,.65);display:block;margin-bottom:3px">Ana Sayfa Buton Yazısı (EN)</label>
+                                        <input class="inp" id="admEduBtnEn" value="${esc(ec.btn_en || 'DJ Academy ↗')}">
+                                    </div>
+                                </div>
+                                <div class="adm-row">
+                                    <div style="flex:1">
+                                        <label style="font-size:11px;color:rgba(255,255,255,.65);display:block;margin-bottom:3px">Form Başlığı (TR)</label>
+                                        <input class="inp" id="admEduTitleTr" value="${esc(ec.title_tr || '')}">
+                                    </div>
+                                    <div style="flex:1">
+                                        <label style="font-size:11px;color:rgba(255,255,255,.65);display:block;margin-bottom:3px">Form Başlığı (EN)</label>
+                                        <input class="inp" id="admEduTitleEn" value="${esc(ec.title_en || '')}">
+                                    </div>
+                                </div>
+                                <label style="font-size:11px;color:rgba(255,255,255,.65)">Form Açıklaması (TR)</label>
+                                <textarea class="inp" id="admEduDescTr" rows="2">${esc(ec.desc_tr || '')}</textarea>
+                                <label style="font-size:11px;color:rgba(255,255,255,.65)">Form Açıklaması (EN)</label>
+                                <textarea class="inp" id="admEduDescEn" rows="2">${esc(ec.desc_en || '')}</textarea>
+                            </div>
+                        </div>
+
+                        <div class="adm-sec">
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                                <h4 style="margin:0">3. Form Soruları (${qs.length})</h4>
+                                <button type="button" class="btn-pill active" id="admAddEduQBtn" style="padding:5px 12px;font-size:11.5px">+ Yeni Soru Ekle</button>
+                            </div>
+                            <div id="admEduQuestionsWrap">
+                                ${qs.map((q, qIdx) => `
+                                    <div class="adm-q-card" data-qidx="${qIdx}">
+                                        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                                            <b style="font-size:12px;color:#60a5fa">Soru #${qIdx + 1}</b>
+                                            <div style="display:flex;align-items:center;gap:6px">
+                                                <label style="font-size:11px;color:rgba(255,255,255,.8);display:flex;align-items:center;gap:4px;cursor:pointer;margin-right:4px">
+                                                    <input type="checkbox" data-q-req="${qIdx}" ${q.required ? 'checked' : ''}> Zorunlu
+                                                </label>
+                                                <button type="button" class="btn-pill adm-q-up" data-qidx="${qIdx}" style="padding:3px 7px;font-size:11px" ${qIdx === 0 ? 'disabled style="opacity:.35;padding:3px 7px;font-size:11px"' : ''}>↑</button>
+                                                <button type="button" class="btn-pill adm-q-down" data-qidx="${qIdx}" style="padding:3px 7px;font-size:11px" ${qIdx === qs.length - 1 ? 'disabled style="opacity:.35;padding:3px 7px;font-size:11px"' : ''}>↓</button>
+                                                <button type="button" class="adm-del adm-q-del" data-qidx="${qIdx}" style="padding:3px 8px;font-size:11px">Sil</button>
+                                            </div>
+                                        </div>
+                                        <div class="adm-row">
+                                            <input class="inp" data-q-lbl-tr="${qIdx}" value="${esc(q.label_tr || '')}" placeholder="Soru Başlığı (TR)" style="flex:1">
+                                            <input class="inp" data-q-lbl-en="${qIdx}" value="${esc(q.label_en || '')}" placeholder="Question Label (EN)" style="flex:1">
+                                        </div>
+                                        <div class="adm-row">
+                                            <select class="inp" data-q-type="${qIdx}" style="flex:1">
+                                                <option value="text" ${q.type === 'text' ? 'selected' : ''}>Kısa Yazı (Metin)</option>
+                                                <option value="tel" ${q.type === 'tel' ? 'selected' : ''}>Telefon / WhatsApp</option>
+                                                <option value="email" ${q.type === 'email' ? 'selected' : ''}>E-posta</option>
+                                                <option value="select" ${q.type === 'select' ? 'selected' : ''}>Çoktan Seçmeli (Seçenekli)</option>
+                                                <option value="textarea" ${q.type === 'textarea' ? 'selected' : ''}>Uzun Yazı (Paragraf)</option>
+                                            </select>
+                                            <input class="inp" data-q-ph-tr="${qIdx}" value="${esc(q.placeholder_tr || '')}" placeholder="İpucu yazısı TR (isteğe bağlı)" style="flex:1">
+                                            <input class="inp" data-q-ph-en="${qIdx}" value="${esc(q.placeholder_en || '')}" placeholder="Placeholder EN" style="flex:1">
+                                        </div>
+                                        <div class="adm-row" data-q-opt-row="${qIdx}" style="display:${q.type === 'select' ? 'flex' : 'none'}">
+                                            <input class="inp" data-q-opt-tr="${qIdx}" value="${esc(q.options_tr || '')}" placeholder="Seçenekler TR (Virgülle ayırın: Başlangıç, Orta, İleri)" style="flex:1">
+                                            <input class="inp" data-q-opt-en="${qIdx}" value="${esc(q.options_en || '')}" placeholder="Options EN (Comma separated)" style="flex:1">
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="adm-status" id="admEduStatus"></div>
+                    <div style="display:flex;justify-content:flex-end;margin-top:8px">
+                        <button type="button" class="btn-pill active" id="admSaveEduBtn">Form Ayarlarını & Soruları Kaydet</button>
+                    </div>
+                `;
             }
 
+            const unreadSubs = (SITE.eduSubmissions || []).filter(x => !x.is_read).length;
             return `
                 <div class="adm-tabs" style="justify-content:space-between">
                     <div style="display:flex;gap:6px;flex-wrap:wrap">
@@ -1468,6 +1658,7 @@ const APPS = {
                         <button class="btn-pill ${adminTab === 'tracks' ? 'active' : ''}" data-atab="tracks">Tracks (30s)</button>
                         <button class="btn-pill ${adminTab === 'appearance' ? 'active' : ''}" data-atab="appearance">Logo & Wallpapers</button>
                         <button class="btn-pill ${adminTab === 'texts' ? 'active' : ''}" data-atab="texts">Texts & Links</button>
+                        <button class="btn-pill ${adminTab === 'edu' ? 'active' : ''}" data-atab="edu">Eğitim & Başvurular${unreadSubs ? ` (${unreadSubs})` : ''}</button>
                     </div>
                     <button class="adm-del" id="admLogoutBtn">Sign Out</button>
                 </div>
@@ -1591,7 +1782,7 @@ const APPS = {
                     btn.textContent = 'Saving...';
                     await sb.from('site_settings').upsert({
                         id: 1,
-                        dock_icons: { ...SITE.dockIcons, _uncompressed_url: SITE.links.uncompressed }
+                        dock_icons: buildDockIconsPayload()
                     }, { onConflict: 'id' });
                     await syncFromSupabase();
                     const b = w.querySelector('#admSaveUncompBtn');
@@ -1751,7 +1942,7 @@ const APPS = {
                         lock_image: SITE.lockImage,
                         bg_video: SITE.bgVideo,
                         bg_gif: SITE.bgGif,
-                        dock_icons: { ...SITE.dockIcons, _uncompressed_url: SITE.links.uncompressed }
+                        dock_icons: buildDockIconsPayload()
                     }, { onConflict: 'id' });
 
                     if (error) {
@@ -1917,7 +2108,7 @@ const APPS = {
                         soundcloud_url: SITE.links.soundcloud,
                         spotify_url: SITE.links.spotify,
                         youtube_url: SITE.links.youtube,
-                        dock_icons: { ...SITE.dockIcons, _uncompressed_url: SITE.links.uncompressed }
+                        dock_icons: buildDockIconsPayload()
                     }, { onConflict: 'id' });
 
                     if (error) {
@@ -1928,6 +2119,152 @@ const APPS = {
                         if (s) {
                             s.textContent = 'Saved ✓';
                             s.classList.add('on');
+                        }
+                    }
+                };
+            } else if (adminTab === 'edu') {
+                const statusEl = w.querySelector('#admEduStatus');
+                const syncDomToEduConfig = () => {
+                    const ec = SITE.eduConfig;
+                    ec.enabled = Boolean(w.querySelector('#admEduEnabled')?.checked);
+                    ec.btn_tr = w.querySelector('#admEduBtnTr')?.value.trim() || 'DJ Eğitimi ↗';
+                    ec.btn_en = w.querySelector('#admEduBtnEn')?.value.trim() || 'DJ Academy ↗';
+                    ec.title_tr = w.querySelector('#admEduTitleTr')?.value.trim() || '';
+                    ec.title_en = w.querySelector('#admEduTitleEn')?.value.trim() || '';
+                    ec.desc_tr = w.querySelector('#admEduDescTr')?.value.trim() || '';
+                    ec.desc_en = w.querySelector('#admEduDescEn')?.value.trim() || '';
+                    ec.questions.forEach((q, idx) => {
+                        q.required = Boolean(w.querySelector(`[data-q-req="${idx}"]`)?.checked);
+                        q.label_tr = w.querySelector(`[data-q-lbl-tr="${idx}"]`)?.value.trim() || '';
+                        q.label_en = w.querySelector(`[data-q-lbl-en="${idx}"]`)?.value.trim() || '';
+                        q.type = w.querySelector(`[data-q-type="${idx}"]`)?.value || 'text';
+                        q.placeholder_tr = w.querySelector(`[data-q-ph-tr="${idx}"]`)?.value.trim() || '';
+                        q.placeholder_en = w.querySelector(`[data-q-ph-en="${idx}"]`)?.value.trim() || '';
+                        q.options_tr = w.querySelector(`[data-q-opt-tr="${idx}"]`)?.value.trim() || '';
+                        q.options_en = w.querySelector(`[data-q-opt-en="${idx}"]`)?.value.trim() || '';
+                    });
+                };
+
+                w.querySelectorAll('[data-q-type]').forEach(sel => {
+                    sel.onchange = () => {
+                        const idx = sel.dataset.qType;
+                        const optRow = w.querySelector(`[data-q-opt-row="${idx}"]`);
+                        if (optRow) optRow.style.display = sel.value === 'select' ? 'flex' : 'none';
+                    };
+                });
+
+                const addQBtn = w.querySelector('#admAddEduQBtn');
+                if (addQBtn) {
+                    addQBtn.onclick = () => {
+                        syncDomToEduConfig();
+                        SITE.eduConfig.questions.push({
+                            id: 'q_' + Date.now(),
+                            label_tr: 'Yeni Soru',
+                            label_en: 'New Question',
+                            placeholder_tr: '',
+                            placeholder_en: '',
+                            type: 'text',
+                            options_tr: '',
+                            options_en: '',
+                            required: false
+                        });
+                        refresh();
+                    };
+                }
+
+                w.querySelectorAll('.adm-q-up').forEach(btn => {
+                    btn.onclick = () => {
+                        syncDomToEduConfig();
+                        const i = Number(btn.dataset.qidx);
+                        if (i <= 0) return;
+                        const qs = SITE.eduConfig.questions;
+                        [qs[i - 1], qs[i]] = [qs[i], qs[i - 1]];
+                        refresh();
+                    };
+                });
+
+                w.querySelectorAll('.adm-q-down').forEach(btn => {
+                    btn.onclick = () => {
+                        syncDomToEduConfig();
+                        const i = Number(btn.dataset.qidx);
+                        const qs = SITE.eduConfig.questions;
+                        if (i >= qs.length - 1) return;
+                        [qs[i + 1], qs[i]] = [qs[i], qs[i + 1]];
+                        refresh();
+                    };
+                });
+
+                w.querySelectorAll('.adm-q-del').forEach(btn => {
+                    btn.onclick = () => {
+                        syncDomToEduConfig();
+                        const i = Number(btn.dataset.qidx);
+                        SITE.eduConfig.questions.splice(i, 1);
+                        refresh();
+                    };
+                });
+
+                const refreshSubsBtn = w.querySelector('#admRefreshSubsBtn');
+                if (refreshSubsBtn) {
+                    refreshSubsBtn.onclick = async () => {
+                        syncDomToEduConfig();
+                        refreshSubsBtn.textContent = '...';
+                        const subRes = await sb.from('edu_submissions').select('*').order('created_at', { ascending: false });
+                        if (!subRes.error && Array.isArray(subRes.data)) {
+                            SITE.eduTableMissing = false;
+                            SITE.eduSubmissions = subRes.data;
+                        }
+                        refresh();
+                    };
+                }
+
+                const copySqlBtn = w.querySelector('#admCopySqlBtn');
+                if (copySqlBtn) {
+                    copySqlBtn.onclick = () => {
+                        const sql = `create table if not exists public.edu_submissions (\n  id uuid primary key default gen_random_uuid(),\n  created_at timestamptz default now(),\n  answers jsonb not null default '[]'::jsonb,\n  is_read boolean default false\n);\nalter table public.edu_submissions enable row level security;\ncreate policy "Allow public insert" on public.edu_submissions for insert to anon, authenticated with check (true);\ncreate policy "Allow admin manage" on public.edu_submissions for all to authenticated using (true) with check (true);`;
+                        navigator.clipboard?.writeText(sql);
+                        copySqlBtn.textContent = 'SQL Kopyalandı ✓';
+                        setTimeout(() => { copySqlBtn.textContent = 'SQL Kodunu Kopyala'; }, 2500);
+                    };
+                }
+
+                w.querySelectorAll('.adm-sub-read').forEach(btn => {
+                    btn.onclick = async () => {
+                        const sub = SITE.eduSubmissions[Number(btn.dataset.idx)];
+                        if (!sub) return;
+                        await sb.from('edu_submissions').update({ is_read: true }).eq('id', sub.id);
+                        sub.is_read = true;
+                        refresh();
+                    };
+                });
+
+                w.querySelectorAll('.adm-sub-del').forEach(btn => {
+                    btn.onclick = async () => {
+                        const idx = Number(btn.dataset.idx);
+                        const sub = SITE.eduSubmissions[idx];
+                        if (!sub) return;
+                        await sb.from('edu_submissions').delete().eq('id', sub.id);
+                        SITE.eduSubmissions.splice(idx, 1);
+                        refresh();
+                    };
+                });
+
+                w.querySelector('#admSaveEduBtn').onclick = async () => {
+                    syncDomToEduConfig();
+                    applyMedia();
+                    statusEl.textContent = 'Eğitim ayarları ve sorular kaydediliyor...';
+                    statusEl.classList.add('on');
+                    const { error } = await sb.from('site_settings').upsert({
+                        id: 1,
+                        dock_icons: buildDockIconsPayload()
+                    }, { onConflict: 'id' });
+                    if (error) {
+                        statusEl.textContent = 'Hata: ' + error.message;
+                    } else {
+                        await syncFromSupabase();
+                        const sEl = w.querySelector('#admEduStatus');
+                        if (sEl) {
+                            sEl.textContent = 'Kaydedildi ✓';
+                            sEl.classList.add('on');
                         }
                     }
                 };
