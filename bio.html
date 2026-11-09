@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://gjbvypvyikrwicdfhler.supabase.co" crossorigin>
     <link rel="preconnect" href="https://fonts.cdnfonts.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.cdnfonts.com/css/sf-pro-display" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="style.css?v=11">
+    <link rel="stylesheet" href="style.css?v=19">
 </head>
 
 <body class="bio-page-body">
@@ -89,8 +89,10 @@
             </div>
         </article>
     </main>
+    <div id="win"></div>
 
     <script>
+    (function () {
         function updateViewportScale() {
             if (window.innerWidth <= 768) {
                 document.documentElement.style.setProperty('--ui-scale', '1');
@@ -274,7 +276,11 @@
                 } catch (_) { }
             } catch (_) { }
         })();
+        window.applyBioSettings = applyBioSettings;
+    })();
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="script.js?v=19"></script>
     <script>
         window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
     </script>

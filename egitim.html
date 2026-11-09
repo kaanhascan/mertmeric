@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://gjbvypvyikrwicdfhler.supabase.co" crossorigin>
     <link rel="preconnect" href="https://fonts.cdnfonts.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.cdnfonts.com/css/sf-pro-display" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="style.css?v=15">
+    <link rel="stylesheet" href="style.css?v=19">
 </head>
 
 <body class="bio-page-body">
@@ -77,6 +77,28 @@
                     style="font-size:20px;font-weight:800;color:#fff;margin:4px 0 0;letter-spacing:-0.01em"></h2>
             </div>
 
+            <div class="edu-portal-card" id="eduPortalCard">
+                <div class="edu-portal-info">
+                    <span class="edu-portal-badge" id="eduPortalBadge">
+                        <svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor" aria-hidden="true">
+                            <path
+                                d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
+                        </svg>
+                        Öğrenci Portalı
+                    </span>
+                    <h3 class="edu-portal-title" id="eduPortalTitle">Kayıtlı Öğrenciler İçin Drive Arşivi</h3>
+                    <p class="edu-portal-desc" id="eduPortalDesc">Daha önce eğitime katıldıysanız, Google Drive eğitim
+                        dosyalarına ve ders materyallerine erişmek için giriş yapın.</p>
+                </div>
+                <button type="button" class="edu-portal-btn" id="openEduDriveModalBtn">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path
+                            d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z" />
+                    </svg>
+                    <span id="eduPortalBtnTxt">Eğitim Arşivine Eriş ↗</span>
+                </button>
+            </div>
+
             <div id="eduMainArea">
                 <p class="edu-form-intro" id="eduPageDesc"></p>
                 <form id="eduApplyForm" class="edu-form"></form>
@@ -99,7 +121,36 @@
         </article>
     </main>
 
+
+    <div class="edu-modal-backdrop" id="eduDriveModal" aria-hidden="true">
+        <div class="edu-modal-box">
+            <button type="button" class="edu-modal-close" id="closeEduDriveModalBtn" aria-label="Kapat">✕</button>
+            <div class="edu-modal-icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                        d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z" />
+                </svg>
+            </div>
+            <h3 class="edu-modal-title" id="eduModalTitle">Google Drive Eğitim Arşivi</h3>
+            <p class="edu-modal-desc" id="eduModalDesc">Eğitime kayıtlı olduğunuz e-posta adresinizi girin. Bilgileriniz
+                doğrulandığında Google Drive arşiviniz açılacaktır.</p>
+            <form id="eduDriveAuthForm" class="edu-modal-form">
+                <div class="edu-field" style="margin:0">
+                    <input type="email" class="edu-inp" id="eduDriveEmailInput" placeholder="ornek@gmail.com" required
+                        autocomplete="email" style="font-size:15px;padding:12px 14px">
+                </div>
+                <div id="eduDriveStatus" class="edu-modal-status"></div>
+                <button type="submit" class="edu-submit-btn" id="eduDriveSubmitBtn" style="margin-top:4px">
+                    <span id="eduDriveSubmitBtnTxt">Doğrula ve Arşive Git ↗</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div id="win"></div>
+
     <script>
+    (function () {
         function updateViewportScale() {
             if (window.innerWidth <= 768) {
                 document.documentElement.style.setProperty('--ui-scale', '1');
@@ -133,8 +184,12 @@
             backEn: "‹ Back",
             submitted: false,
             draftAnswers: {},
+            instagramUrl: "",
             config: {
                 enabled: true,
+                applications_open: true,
+                closed_msg_tr: "Bu dönem için eğitim başvurularımız tamamlanmıştır. Yeni dönem duyuruları için takipte kalın veya doğrudan iletişime geçin.",
+                closed_msg_en: "Applications for this term are now closed. Follow for updates or contact us directly.",
                 badge_tr: "Prodüksiyon Eğitimi",
                 badge_en: "Production Academy",
                 title_tr: "DJ & Prodüksiyon Eğitimi Başvuru Formu",
@@ -208,6 +263,22 @@
                     : (cfg.title_tr || 'DJ & Prodüksiyon Eğitimi Başvuru Formu');
             }
 
+            const pBadge = document.getElementById('eduPortalBadge');
+            if (pBadge) pBadge.innerHTML = `<svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg> ${isEn ? 'Student Portal' : 'Öğrenci Portalı'}`;
+            const pTitle = document.getElementById('eduPortalTitle');
+            if (pTitle) pTitle.textContent = isEn ? 'Drive Archive for Enrolled Students' : 'Kayıtlı Öğrenciler İçin Drive Arşivi';
+            const pDesc = document.getElementById('eduPortalDesc');
+            if (pDesc) pDesc.textContent = isEn ? 'If you are already enrolled, sign in with your email to access your Google Drive training files and materials.' : 'Daha önce eğitime katıldıysanız, Google Drive eğitim dosyalarına ve ders materyallerine erişmek için giriş yapın.';
+            const pBtnTxt = document.getElementById('eduPortalBtnTxt');
+            if (pBtnTxt) pBtnTxt.textContent = isEn ? 'Access Course Archive ↗' : 'Eğitim Arşivine Eriş ↗';
+
+            const mTitle = document.getElementById('eduModalTitle');
+            if (mTitle) mTitle.textContent = isEn ? 'Google Drive Course Archive' : 'Google Drive Eğitim Arşivi';
+            const mDesc = document.getElementById('eduModalDesc');
+            if (mDesc) mDesc.textContent = isEn ? 'Enter your registered email address. Once verified, your Google Drive archive will open automatically.' : 'Eğitime kayıtlı olduğunuz e-posta adresinizi girin. Bilgileriniz doğrulandığında Google Drive arşiviniz açılacaktır.';
+            const mBtnTxt = document.getElementById('eduDriveSubmitBtnTxt');
+            if (mBtnTxt) mBtnTxt.textContent = isEn ? 'Verify & Open Archive ↗' : 'Doğrula ve Arşive Git ↗';
+
             const mainArea = document.getElementById('eduMainArea');
             if (!mainArea) return;
 
@@ -227,6 +298,44 @@
                     </div>
                 `;
                 return;
+            }
+
+            if (cfg.applications_open === false) {
+                const cBadge = isEn ? 'Applications Closed' : 'Başvurular Kapandı';
+                const cTitle = isEn ? 'Applications Closed for This Term' : 'Bu Dönem Başvuruları Kapanmıştır';
+                const cDesc = isEn
+                    ? (cfg.closed_msg_en || 'Applications for this term are currently closed. Follow our announcements for upcoming terms or reach out on Instagram.')
+                    : (cfg.closed_msg_tr || 'Bu dönem için eğitim başvurularımız tamamlanmıştır. Yeni dönem duyuruları için takipte kalın veya Instagram üzerinden iletişime geçin.');
+                const igUrl = EDU_STATE.instagramUrl || 'https://instagram.com/mertmeric';
+                const backHome = isEn ? '‹ Back to Home' : '‹ Ana Sayfaya Dön';
+
+                mainArea.innerHTML = `
+                    <div class="edu-closed-box">
+                        <div class="edu-closed-icon">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                            </svg>
+                        </div>
+                        <span class="edu-closed-badge">${esc(cBadge)}</span>
+                        <h3 class="edu-closed-title">${esc(cTitle)}</h3>
+                        <p class="edu-closed-desc">${esc(cDesc)}</p>
+                        <div style="margin-top:20px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+                            <a href="${esc(igUrl)}" target="_blank" rel="noopener" class="edu-portal-btn" style="padding:10px 20px;font-size:13px;text-decoration:none">
+                                Instagram ↗
+                            </a>
+                            <a href="index.html#hub" class="bio-back-btn" style="display:inline-flex;padding:10px 18px;font-size:13px">${esc(backHome)}</a>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            if (!document.getElementById('eduApplyForm')) {
+                mainArea.innerHTML = `
+                    <p class="edu-form-intro" id="eduPageDesc"></p>
+                    <form id="eduApplyForm" class="edu-form"></form>
+                    <div id="eduFormErr" style="display:none;color:#ff453a;font-size:13px;text-align:center;margin-bottom:14px"></div>
+                `;
             }
 
             const descEl = document.getElementById('eduPageDesc');
@@ -369,7 +478,10 @@
                     mailEl.href = 'mailto:' + d.email;
                 }
             }
-            if (d.instagram_url) document.getElementById('bioLinkIg').href = d.instagram_url;
+            if (d.instagram_url) {
+                EDU_STATE.instagramUrl = d.instagram_url;
+                document.getElementById('bioLinkIg').href = d.instagram_url;
+            }
             if (d.soundcloud_url) document.getElementById('bioLinkSc').href = d.soundcloud_url;
             if (d.spotify_url) document.getElementById('bioLinkSp').href = d.spotify_url;
             if (d.youtube_url) document.getElementById('bioLinkYt').href = d.youtube_url;
@@ -388,16 +500,22 @@
             renderEduPage();
         }
 
-        renderEduPage();
-
+        let appliedCachedEdu = false;
         try {
             const cached = JSON.parse(localStorage.getItem('mert_cloud_settings_v2') || 'null');
-            if (cached) applyEduSettings(cached);
+            if (cached) {
+                appliedCachedEdu = true;
+                applyEduSettings(cached);
+            }
         } catch (_) { }
+        if (!appliedCachedEdu) {
+            renderEduPage();
+        }
 
-        (async function () {
+        async function fetchLatestEduSettings() {
             try {
                 const res = await fetch(SB_URL + "/rest/v1/site_settings?id=eq.1&select=*", {
+                    cache: "no-store",
                     headers: { apikey: SB_KEY, Authorization: "Bearer " + SB_KEY }
                 });
                 if (!res.ok) return;
@@ -409,7 +527,17 @@
                     localStorage.setItem('mert_cloud_settings_v2', JSON.stringify(data));
                 } catch (_) { }
             } catch (_) { }
-        })();
+        }
+
+        fetchLatestEduSettings();
+        window.addEventListener('focus', fetchLatestEduSettings);
+        window.addEventListener('storage', e => {
+            if (e.key === 'mert_cloud_settings_v2' && e.newValue) {
+                try {
+                    applyEduSettings(JSON.parse(e.newValue));
+                } catch (_) { }
+            }
+        });
 
         document.addEventListener('submit', async e => {
             if (e.target && e.target.id === 'eduApplyForm') {
@@ -479,7 +607,185 @@
                 }
             }
         });
+
+        // Drive Access Modal Logic
+        const driveModal = document.getElementById('eduDriveModal');
+        const openDriveBtn = document.getElementById('openEduDriveModalBtn');
+        const closeDriveBtn = document.getElementById('closeEduDriveModalBtn');
+        const driveForm = document.getElementById('eduDriveAuthForm');
+        const driveEmailInp = document.getElementById('eduDriveEmailInput');
+        const driveStatus = document.getElementById('eduDriveStatus');
+        const driveSubmitBtn = document.getElementById('eduDriveSubmitBtn');
+        const driveSubmitTxt = document.getElementById('eduDriveSubmitBtnTxt');
+
+        function openEduModal() {
+            if (!driveModal) return;
+            driveModal.classList.add('open');
+            driveModal.setAttribute('aria-hidden', 'false');
+            if (driveStatus) {
+                driveStatus.className = 'edu-modal-status';
+                driveStatus.style.display = 'none';
+                driveStatus.innerHTML = '';
+            }
+            if (driveSubmitBtn) driveSubmitBtn.style.display = '';
+            if (driveEmailInp) {
+                setTimeout(() => driveEmailInp.focus(), 80);
+            }
+        }
+
+        function closeEduModal() {
+            if (!driveModal) return;
+            driveModal.classList.remove('open');
+            driveModal.setAttribute('aria-hidden', 'true');
+        }
+
+        if (openDriveBtn) openDriveBtn.addEventListener('click', openEduModal);
+        if (closeDriveBtn) closeDriveBtn.addEventListener('click', closeEduModal);
+
+        if (driveModal) {
+            driveModal.addEventListener('click', e => {
+                if (e.target === driveModal) closeEduModal();
+            });
+        }
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && driveModal && driveModal.classList.contains('open')) {
+                closeEduModal();
+            }
+        });
+
+        if (driveForm) {
+            driveForm.addEventListener('submit', async e => {
+                e.preventDefault();
+                const isEn = EDU_STATE.lang === 'en';
+                const email = String(driveEmailInp?.value || '').trim().toLowerCase();
+
+                if (!email || !email.includes('@')) {
+                    if (driveStatus) {
+                        driveStatus.className = 'edu-modal-status error';
+                        driveStatus.textContent = isEn ? 'Please enter a valid email address.' : 'Lütfen geçerli bir e-posta adresi girin.';
+                    }
+                    return;
+                }
+
+                if (driveSubmitBtn) driveSubmitBtn.disabled = true;
+                if (driveSubmitTxt) driveSubmitTxt.textContent = isEn ? 'Verifying...' : 'Doğrulanıyor...';
+                if (driveStatus) {
+                    driveStatus.className = 'edu-modal-status loading';
+                    driveStatus.textContent = isEn ? 'Checking your enrollment...' : 'Erişim yetkiniz kontrol ediliyor...';
+                }
+
+                try {
+                    let driveUrl = '';
+                    let verifyOk = false;
+
+                    // 1. Try serverless API endpoint
+                    if (window.location.protocol !== 'file:') try {
+                        const apiRes = await fetch('/api/verify-edu-access', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email })
+                        });
+                        if (apiRes.ok) {
+                            const data = await apiRes.json();
+                            if (data && data.ok && data.driveUrl) {
+                                driveUrl = data.driveUrl;
+                                verifyOk = true;
+                            }
+                        } else if (apiRes.status === 403) {
+                            const data = await apiRes.json().catch(() => ({}));
+                            throw new Error(data?.error || 'not_found');
+                        }
+                    } catch (apiErr) {
+                        if (apiErr.message === 'not_found' || apiErr.message === 'drive_not_configured') {
+                            throw apiErr;
+                        }
+                    }
+
+                    // 2. Direct Supabase RPC fallback (works in local dev or if rewrite is not active yet)
+                    if (!verifyOk) {
+                        const rpcRes = await fetch(SB_URL + "/rest/v1/rpc/verify_edu_access", {
+                            method: "POST",
+                            headers: {
+                                apikey: SB_KEY,
+                                Authorization: "Bearer " + SB_KEY,
+                                "Content-Type": "application/json"
+                            },
+                            body: JSON.stringify({ check_email: email })
+                        });
+
+                        if (rpcRes.ok) {
+                            const rpcData = await rpcRes.json();
+                            if (rpcData && rpcData.success && rpcData.drive_url) {
+                                driveUrl = rpcData.drive_url;
+                                verifyOk = true;
+                            } else {
+                                throw new Error(rpcData?.error || 'not_found');
+                            }
+                        } else {
+                            const txt = await rpcRes.text();
+                            if (txt.includes('verify_edu_access') || rpcRes.status === 404) {
+                                throw new Error('rpc_missing');
+                            }
+                            throw new Error('not_found');
+                        }
+                    }
+
+                    if (verifyOk && driveUrl) {
+                        if (driveStatus) {
+                            driveStatus.className = 'edu-modal-status success';
+                            driveStatus.innerHTML = `
+                                <div><b>${isEn ? 'Access verified! ✓' : 'Erişim doğrulandı! ✓'}</b></div>
+                                <div style="margin-top:4px;font-size:12px">${isEn ? 'Opening Google Drive...' : 'Google Drive açılıyor...'}</div>
+                                <a href="${esc(driveUrl)}" target="_blank" rel="noopener" class="edu-submit-btn" style="margin-top:10px;display:inline-flex;text-decoration:none;font-size:13px;padding:10px 18px;justify-content:center">
+                                    ${isEn ? 'Open Drive Folder ↗' : 'Drive Klasörünü Aç ↗'}
+                                </a>
+                            `;
+                        }
+                        if (driveSubmitBtn) driveSubmitBtn.style.display = 'none';
+
+                        window.open(driveUrl, '_blank');
+                    } else {
+                        throw new Error('not_found');
+                    }
+                } catch (err) {
+                    if (driveSubmitBtn) {
+                        driveSubmitBtn.disabled = false;
+                        driveSubmitBtn.style.display = '';
+                    }
+                    if (driveSubmitTxt) driveSubmitTxt.textContent = isEn ? 'Verify & Open Archive ↗' : 'Doğrula ve Arşive Git ↗';
+
+                    let msg = '';
+                    if (err.message === 'not_found') {
+                        msg = isEn
+                            ? 'No active enrollment found for this email. Please check your spelling or contact your instructor.'
+                            : 'Bu e-posta adresine ait aktif bir eğitim kaydı bulunamadı. Lütfen kontrol edip tekrar deneyin veya bizimle iletişime geçin.';
+                    } else if (err.message === 'drive_not_configured') {
+                        msg = isEn
+                            ? 'The Drive folder link is currently being updated. Please contact the administrator.'
+                            : 'Drive arşivi linki henüz sisteme eklenmemiş veya güncelleniyor. Lütfen yöneticiyle iletişime geçin.';
+                    } else if (err.message === 'rpc_missing') {
+                        msg = isEn
+                            ? 'Database setup is required. Please ask the administrator to configure the access table.'
+                            : 'Veritabanı kurulumu henüz tamamlanmamış. Lütfen yöneticinin SQL kurulumunu yapmasını sağlayın.';
+                    } else {
+                        msg = isEn
+                            ? 'A verification error occurred. Please try again later.'
+                            : 'Doğrulama sırasında bir hata oluştu. Lütfen tekrar deneyin.';
+                    }
+
+                    if (driveStatus) {
+                        driveStatus.className = 'edu-modal-status error';
+                        driveStatus.textContent = msg;
+                    }
+                }
+            });
+        }
+        window.applyEduSettings = applyEduSettings;
+    })();
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="script.js?v=19"></script>
     <script>
         window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
     </script>

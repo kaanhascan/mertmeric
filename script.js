@@ -65,6 +65,9 @@ const SITE = {
     },
     eduConfig: {
         enabled: true,
+        applications_open: true,
+        closed_msg_tr: "Bu dönem için eğitim başvurularımız tamamlanmıştır. Yeni dönem duyuruları için takipte kalın veya doğrudan iletişime geçin.",
+        closed_msg_en: "Applications for this term are now closed. Follow for updates or contact us directly.",
         btn_tr: "DJ Eğitimi ↗",
         btn_en: "DJ Academy ↗",
         badge_tr: "Prodüksiyon Akademisi",
@@ -84,7 +87,10 @@ const SITE = {
         ]
     },
     eduSubmissions: [],
-    eduTableMissing: false
+    eduTableMissing: false,
+    eduAccess: [],
+    eduDriveUrl: '',
+    eduAccessTableMissing: false
 };
 
 function buildDockIconsPayload() {
@@ -353,7 +359,7 @@ const sb = window.supabase
     : null;
 
 let adminSession = null;
-let adminTab = 'media';
+let adminTab = (typeof location !== 'undefined' && location.pathname.includes('egitim')) ? 'edu' : ((typeof location !== 'undefined' && location.pathname.includes('bio')) ? 'texts' : 'media');
 
 async function syncFromSupabase() {
     if (!sb) return;
@@ -411,7 +417,12 @@ async function syncFromSupabase() {
         if (Array.isArray(mediaData)) SITE.media = mediaData.map(m => ({ ...m, src: getProxiedMediaUrl(m.src) }));
 
         if (adminSession) {
-            const subRes = await sb.from('edu_submissions').select('*').order('created_at', { ascending: false });
+            const [subRes, accessRes, vaultRes] = await Promise.all([
+                sb.from('edu_submissions').select('*').order('created_at', { ascending: false }),
+                sb.from('edu_access').select('*').order('created_at', { ascending: false }),
+                sb.from('edu_vault').select('drive_url').eq('id', 1).maybeSingle()
+            ]);
+
             if (subRes.error) {
                 if (subRes.error.code === '42P01' || subRes.error.code === 'PGRST205' || String(subRes.error.message || '').includes('edu_submissions')) {
                     SITE.eduTableMissing = true;
@@ -419,6 +430,19 @@ async function syncFromSupabase() {
             } else if (Array.isArray(subRes.data)) {
                 SITE.eduTableMissing = false;
                 SITE.eduSubmissions = subRes.data;
+            }
+
+            if (accessRes.error) {
+                if (accessRes.error.code === '42P01' || accessRes.error.code === 'PGRST205' || String(accessRes.error.message || '').includes('edu_access')) {
+                    SITE.eduAccessTableMissing = true;
+                }
+            } else if (Array.isArray(accessRes.data)) {
+                SITE.eduAccessTableMissing = false;
+                SITE.eduAccess = accessRes.data;
+            }
+
+            if (vaultRes && vaultRes.data && typeof vaultRes.data.drive_url === 'string') {
+                SITE.eduDriveUrl = vaultRes.data.drive_url;
             }
         }
 
@@ -456,8 +480,12 @@ function refreshOpenWindows() {
     ['photos', 'contact', 'admin'].forEach(k => {
         const w = document.querySelector(`.w[data-k="${k}"]`);
         if (w && APPS[k]) {
+            const sc = w.querySelector('.adm-scroll');
+            const prevScroll = sc ? sc.scrollTop : 0;
             w.querySelector('.body').innerHTML = APPS[k].render();
             if (APPS[k].bind) APPS[k].bind(w);
+            const scNew = w.querySelector('.adm-scroll');
+            if (scNew && prevScroll) scNew.scrollTop = prevScroll;
         }
     });
 }
@@ -572,7 +600,8 @@ function applyDesktopBg() {
 
 function applyMedia() {
     document.title = SITE.name;
-    $('#bn').textContent = SITE.brand;
+    const bnEl = $('#bn');
+    if (bnEl) bnEl.textContent = SITE.brand;
 
     const hintSpan = $('#hint span');
     if (hintSpan) hintSpan.textContent = SITE.unlockHint;
@@ -591,19 +620,21 @@ function applyMedia() {
     const logoImg = $('#hubLogoImg');
     const logoWrap = $('#logoImgWrap');
     const logoTxt = $('#hubLogoText');
-    if (SITE.logoImage) {
-        if (logoImg.getAttribute('src') !== SITE.logoImage) logoImg.src = SITE.logoImage;
-        logoImg.style.display = 'block';
-        if (logoWrap) {
-            logoWrap.style.display = 'inline-flex';
-            logoWrap.style.setProperty('--logo-mask', `url("${SITE.logoImage}")`);
+    if (logoImg && logoTxt) {
+        if (SITE.logoImage) {
+            if (logoImg.getAttribute('src') !== SITE.logoImage) logoImg.src = SITE.logoImage;
+            logoImg.style.display = 'block';
+            if (logoWrap) {
+                logoWrap.style.display = 'inline-flex';
+                logoWrap.style.setProperty('--logo-mask', `url("${SITE.logoImage}")`);
+            }
+            logoTxt.style.display = 'none';
+        } else {
+            logoImg.style.display = 'none';
+            if (logoWrap) logoWrap.style.display = 'none';
+            logoTxt.style.display = settingsLoadedOnce ? 'block' : 'none';
+            logoTxt.textContent = SITE.name;
         }
-        logoTxt.style.display = 'none';
-    } else {
-        logoImg.style.display = 'none';
-        if (logoWrap) logoWrap.style.display = 'none';
-        logoTxt.style.display = settingsLoadedOnce ? 'block' : 'none';
-        logoTxt.textContent = SITE.name;
     }
 
     const bioMain = $('#bioMainBox');
@@ -638,6 +669,34 @@ function applyMedia() {
 
     renderTrackWidget();
     requestAnimationFrame(updateViewportScale);
+
+    if (typeof window.applyEduSettings === 'function' || typeof window.applyBioSettings === 'function') {
+        let baseObj = {};
+        try {
+            baseObj = JSON.parse(localStorage.getItem('mert_cloud_settings_v2') || '{}') || {};
+        } catch (_) { }
+        const liveSettings = {
+            ...baseObj,
+            brand: SITE.brand,
+            name: SITE.name,
+            logo_image: SITE.logoImage,
+            bg_video: SITE.bgVideo,
+            bg_gif: SITE.bgGif,
+            bio_back_text: SITE.bioBackText,
+            bio_badge_text: SITE.bioBadgeText,
+            bio_footer_label: SITE.bioFooterLabel,
+            short_bio: SITE.shortBio,
+            long_bio: SITE.longBio,
+            email: SITE.email,
+            instagram_url: SITE.links.instagram,
+            soundcloud_url: SITE.links.soundcloud,
+            spotify_url: SITE.links.spotify,
+            youtube_url: SITE.links.youtube,
+            dock_icons: buildDockIconsPayload()
+        };
+        if (typeof window.applyEduSettings === 'function') window.applyEduSettings(liveSettings);
+        if (typeof window.applyBioSettings === 'function') window.applyBioSettings(liveSettings);
+    }
 }
 
 document.querySelectorAll('#hubLangSwitch .lang-flag-btn').forEach(btn => {
@@ -795,51 +854,58 @@ function tick() {
     const d = new Date();
     const L = SITE.locale;
     const t = d.toLocaleTimeString(L, { hour: 'numeric', minute: '2-digit', hour12: SITE.hour12 });
-    $('#ltime').textContent = t;
-    $('#ldate').textContent = d.toLocaleDateString(L, { weekday: 'long', month: 'long', day: 'numeric' });
-    $('#bt').textContent = d.toLocaleDateString(L, { weekday: 'short', month: 'short', day: 'numeric' }) + "  " + t;
+    const lt = $('#ltime');
+    const ld = $('#ldate');
+    const bt = $('#bt');
+    if (lt) lt.textContent = t;
+    if (ld) ld.textContent = d.toLocaleDateString(L, { weekday: 'long', month: 'long', day: 'numeric' });
+    if (bt) bt.textContent = d.toLocaleDateString(L, { weekday: 'short', month: 'short', day: 'numeric' }) + "  " + t;
 }
 
 const lock = $('#lock');
-let y0 = null, unlocked = false;
+let y0 = null, unlocked = !lock;
 
 function unlock() {
     if (unlocked) return;
     unlocked = true;
-    lock.classList.add('gone');
-    lock.setAttribute('aria-hidden', 'true');
+    if (lock) {
+        lock.classList.add('gone');
+        lock.setAttribute('aria-hidden', 'true');
+    }
     applyDesktopBg();
     const v = $('#bgv');
     if (v && v.style.display !== 'none') v.play().catch(() => { });
 }
 
-lock.addEventListener('click', unlock);
-lock.addEventListener('pointerdown', e => { y0 = e.clientY; });
-lock.addEventListener('pointermove', e => {
-    if (y0 !== null && y0 - e.clientY > 30) {
+if (lock) {
+    lock.addEventListener('click', unlock);
+    lock.addEventListener('pointerdown', e => { y0 = e.clientY; });
+    lock.addEventListener('pointermove', e => {
+        if (y0 !== null && y0 - e.clientY > 30) {
+            y0 = null;
+            unlock();
+        }
+    });
+    lock.addEventListener('pointerup', e => {
+        if (y0 !== null && y0 - e.clientY > 30) unlock();
         y0 = null;
-        unlock();
-    }
-});
-lock.addEventListener('pointerup', e => {
-    if (y0 !== null && y0 - e.clientY > 30) unlock();
-    y0 = null;
-});
-lock.addEventListener('touchstart', e => {
-    if (e.touches && e.touches[0]) y0 = e.touches[0].clientY;
-}, { passive: true });
-lock.addEventListener('touchmove', e => {
-    if (y0 !== null && e.touches && e.touches[0] && y0 - e.touches[0].clientY > 30) {
-        y0 = null;
-        unlock();
-    }
-}, { passive: true });
-lock.addEventListener('touchend', () => { y0 = null; }, { passive: true });
+    });
+    lock.addEventListener('touchstart', e => {
+        if (e.touches && e.touches[0]) y0 = e.touches[0].clientY;
+    }, { passive: true });
+    lock.addEventListener('touchmove', e => {
+        if (y0 !== null && e.touches && e.touches[0] && y0 - e.touches[0].clientY > 30) {
+            y0 = null;
+            unlock();
+        }
+    }, { passive: true });
+    lock.addEventListener('touchend', () => { y0 = null; }, { passive: true });
 
-if (location.hash === '#hub') {
-    lock.style.transition = 'none';
-    unlock();
-    history.replaceState(null, '', location.pathname + location.search);
+    if (location.hash === '#hub') {
+        lock.style.transition = 'none';
+        unlock();
+        history.replaceState(null, '', location.pathname + location.search);
+    }
 }
 
 let photosTab = 'library';
@@ -1548,9 +1614,9 @@ const APPS = {
                             ` : ''}
                             <div class="adm-sub-list">
                                 ${subs.length === 0 ? `<div style="font-size:12px;color:rgba(255,255,255,.5);padding:8px 0">Henüz başvuru gelmedi.</div>` : subs.map((sub, sIdx) => {
-                                    const dt = sub.created_at ? new Date(sub.created_at).toLocaleString('tr-TR') : '';
-                                    const ansList = Array.isArray(sub.answers) ? sub.answers : [];
-                                    return `
+                    const dt = sub.created_at ? new Date(sub.created_at).toLocaleString('tr-TR') : '';
+                    const ansList = Array.isArray(sub.answers) ? sub.answers : [];
+                    return `
                                         <div class="adm-sub-card ${!sub.is_read ? 'unread' : ''}">
                                             <div class="adm-sub-top">
                                                 <div style="font-size:11.5px;color:rgba(255,255,255,.75)">
@@ -1567,17 +1633,45 @@ const APPS = {
                                             </div>
                                         </div>
                                     `;
-                                }).join('')}
+                }).join('')}
                             </div>
                         </div>
 
                         <div class="adm-sec">
-                            <h4>2. Eğitim Butonu & Sayfa Başlığı Ayarları</h4>
+                            <h4>2. Eğitim Butonu & Başvuru Durumu Ayarları</h4>
+
+                            <div style="padding:14px 16px;border-radius:14px;background:${ec.applications_open !== false ? 'rgba(48,209,88,.08)' : 'rgba(255,69,58,.08)'};border:1px solid ${ec.applications_open !== false ? 'rgba(48,209,88,.35)' : 'rgba(255,69,58,.35)'};margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;transition:all .2s ease">
+                                <div>
+                                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+                                        <b style="font-size:13px;color:#fff">Başvuru Formu Durumu:</b>
+                                        <span id="admFormStatusPill" class="adm-badge-pill ${ec.applications_open !== false ? 'open' : 'closed'}">
+                                            ${ec.applications_open !== false ? '● BAŞVURULAR AÇIK' : '○ BAŞVURULAR KAPALI'}
+                                        </span>
+                                    </div>
+                                    <span style="font-size:11.5px;color:rgba(255,255,255,.72)">
+                                        ${ec.applications_open !== false ? 'Eğitim sayfasındaki başvuru formu şu an AÇIK' : 'Eğitim sayfasındaki başvuru formu şu an KAPALI'}
+                                    </span>
+                                </div>
+                                <button type="button" class="btn-pill ${ec.applications_open !== false ? '' : 'active'}" id="admToggleFormStatusBtn" style="padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer">
+                                    ${ec.applications_open !== false ? '⛔ Başvuruları Kapat' : '✅ Başvuruları Tekrar Aç'}
+                                </button>
+                            </div>
+
                             <div class="form-group">
-                                <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#fff;cursor:pointer;margin-bottom:4px">
+                                <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#fff;cursor:pointer;margin-bottom:8px">
                                     <input type="checkbox" id="admEduEnabled" ${ec.enabled !== false ? 'checked' : ''}>
                                     Ana Sayfada Eğitim Başvuru Butonunu Göster
                                 </label>
+                                <div class="adm-row">
+                                    <div style="flex:1">
+                                        <label style="font-size:11px;color:rgba(255,255,255,.65);display:block;margin-bottom:3px">Başvurular Kapalı Açıklaması (TR)</label>
+                                        <input class="inp" id="admEduClosedMsgTr" value="${esc(ec.closed_msg_tr || 'Bu dönem için eğitim başvurularımız tamamlanmıştır. Yeni dönem duyuruları için takipte kalın veya doğrudan iletişime geçin.')}">
+                                    </div>
+                                    <div style="flex:1">
+                                        <label style="font-size:11px;color:rgba(255,255,255,.65);display:block;margin-bottom:3px">Başvurular Kapalı Açıklaması (EN)</label>
+                                        <input class="inp" id="admEduClosedMsgEn" value="${esc(ec.closed_msg_en || 'Applications for this term are now closed. Follow for updates or contact us directly.')}">
+                                    </div>
+                                </div>
                                 <div class="adm-row">
                                     <div style="flex:1">
                                         <label style="font-size:11px;color:rgba(255,255,255,.65);display:block;margin-bottom:3px">Ana Sayfa Buton Yazısı (TR)</label>
@@ -1660,6 +1754,62 @@ const APPS = {
                                 `).join('')}
                             </div>
                         </div>
+
+                        <div class="adm-sec">
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                                <h4 style="margin:0">4. Google Drive & Yetkili Öğrenci Erişimi (${(SITE.eduAccess || []).length})</h4>
+                                <button type="button" class="btn-pill" id="admRefreshAccessBtn" style="padding:4px 10px;font-size:11px">↻ Yenile</button>
+                            </div>
+
+                            ${SITE.eduAccessTableMissing ? `
+                                <div style="padding:10px;border-radius:10px;background:rgba(255,149,0,.14);border:1px solid rgba(255,149,0,.45);font-size:11.5px;line-height:1.5;margin-bottom:12px">
+                                    <b style="color:#ffcc00;display:block;margin-bottom:4px">⚠️ Öğrenci Erişim Tablosu & Güvenlik Fonksiyonu Kurulumu (10 Saniye)</b>
+                                    Öğrencilerin e-posta doğrulaması ve güvenli Drive erişimi için Supabase Dashboard → <b>SQL Editor</b> ekranına aşağıdaki kodu yapıştırıp <b>Run</b> butonuna basın:
+                                    <div style="margin-top:6px;display:flex;gap:6px">
+                                        <button type="button" class="btn-pill active" id="admCopyAccessSqlBtn" style="font-size:11px;padding:4px 10px">SQL Kodunu Kopyala</button>
+                                    </div>
+                                </div>
+                            ` : ''}
+
+                            <div class="form-group" style="margin-bottom:14px">
+                                <label style="font-size:11.5px;color:rgba(255,255,255,.75);display:block;margin-bottom:4px">Google Drive Klasör Linki (Sadece yetkili öğrencilere açılır)</label>
+                                <div style="display:flex;gap:8px">
+                                    <input class="inp" id="admEduDriveUrlInp" value="${esc(SITE.eduDriveUrl || '')}" placeholder="https://drive.google.com/drive/folders/..." style="flex:1">
+                                    <button type="button" class="btn-pill active" id="admSaveDriveUrlBtn" style="white-space:nowrap;padding:0 14px;font-size:11.5px">Linki Kaydet</button>
+                                </div>
+                            </div>
+
+                            <div style="padding:12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);margin-bottom:12px">
+                                <b style="font-size:12px;color:#fff;display:block;margin-bottom:8px">+ Yetkili Öğrenci E-postası Ekle</b>
+                                <div class="adm-row">
+                                    <input class="inp" id="admNewStudentEmail" type="email" placeholder="ogrenci@gmail.com" style="flex:1">
+                                    <input class="inp" id="admNewStudentNote" placeholder="Öğrenci Adı / Not (İsteğe bağlı)" style="flex:1">
+                                    <button type="button" class="btn-pill active" id="admAddStudentBtn" style="white-space:nowrap;padding:0 14px;font-size:11.5px">Ekle</button>
+                                </div>
+                                <div id="admStudentAddErr" style="display:none;color:#ff453a;font-size:11px;margin-top:6px"></div>
+                            </div>
+
+                            <div class="adm-sub-list">
+                                ${(SITE.eduAccess || []).length === 0 ? `
+                                    <div style="font-size:12px;color:rgba(255,255,255,.5);padding:6px 0">Henüz yetkili öğrenci eklenmedi. Yukarıdan e-posta ekleyebilirsiniz.</div>
+                                ` : (SITE.eduAccess || []).map((st, stIdx) => {
+                    const dt = st.created_at ? new Date(st.created_at).toLocaleDateString('tr-TR') : '';
+                    return `
+                                        <div class="adm-sub-card" style="padding:8px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px">
+                                            <div style="display:flex;flex-direction:column;gap:2px;overflow:hidden">
+                                                <div style="font-size:12.5px;color:#fff;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                                                    ✉️ ${esc(st.email)}
+                                                </div>
+                                                <div style="font-size:11px;color:rgba(255,255,255,.6)">
+                                                    ${st.note ? `${esc(st.note)} • ` : ''}Kayıt: ${esc(dt)}
+                                                </div>
+                                            </div>
+                                            <button type="button" class="adm-del adm-student-del" data-id="${esc(st.id)}" data-idx="${stIdx}" style="padding:4px 8px;font-size:11px;flex-shrink:0">Sil</button>
+                                        </div>
+                                    `;
+                }).join('')}
+                            </div>
+                        </div>
                     </div>
                     <div class="adm-status" id="admEduStatus"></div>
                     <div style="display:flex;justify-content:flex-end;margin-top:8px">
@@ -1685,8 +1835,12 @@ const APPS = {
         },
         bind: (w) => {
             const refresh = () => {
+                const sc = w.querySelector('.adm-scroll');
+                const prevScroll = sc ? sc.scrollTop : 0;
                 w.querySelector('.body').innerHTML = APPS.admin.render();
                 APPS.admin.bind(w);
+                const scNew = w.querySelector('.adm-scroll');
+                if (scNew && prevScroll) scNew.scrollTop = prevScroll;
             };
 
             if (!adminSession) {
@@ -2145,6 +2299,9 @@ const APPS = {
                 const syncDomToEduConfig = () => {
                     const ec = SITE.eduConfig;
                     ec.enabled = Boolean(w.querySelector('#admEduEnabled')?.checked);
+                    ec.applications_open = SITE.eduConfig.applications_open !== false;
+                    ec.closed_msg_tr = w.querySelector('#admEduClosedMsgTr')?.value.trim() || '';
+                    ec.closed_msg_en = w.querySelector('#admEduClosedMsgEn')?.value.trim() || '';
                     ec.btn_tr = w.querySelector('#admEduBtnTr')?.value.trim() || 'DJ Eğitimi ↗';
                     ec.btn_en = w.querySelector('#admEduBtnEn')?.value.trim() || 'DJ Academy ↗';
                     ec.badge_tr = w.querySelector('#admEduBadgeTr')?.value.trim() || 'Prodüksiyon Akademisi';
@@ -2172,6 +2329,48 @@ const APPS = {
                         if (optRow) optRow.style.display = sel.value === 'select' ? 'flex' : 'none';
                     };
                 });
+
+                const toggleFormBtn = w.querySelector('#admToggleFormStatusBtn');
+                if (toggleFormBtn) {
+                    toggleFormBtn.onclick = async () => {
+                        syncDomToEduConfig();
+                        const currentOpen = SITE.eduConfig.applications_open !== false;
+                        const nextOpen = !currentOpen;
+                        SITE.eduConfig.applications_open = nextOpen;
+
+                        toggleFormBtn.textContent = 'Güncelleniyor...';
+                        toggleFormBtn.disabled = true;
+
+                        const { data: savedRow, error } = await sb.from('site_settings').upsert({
+                            id: 1,
+                            dock_icons: buildDockIconsPayload()
+                        }, { onConflict: 'id' }).select().single();
+
+                        if (error) {
+                            SITE.eduConfig.applications_open = currentOpen;
+                            alert('Hata: ' + error.message);
+                            refresh();
+                            return;
+                        }
+
+                        if (savedRow) {
+                            applySettingsObject(savedRow);
+                            try {
+                                localStorage.setItem('mert_cloud_settings_v2', JSON.stringify(savedRow));
+                            } catch (_) { }
+                        }
+                        applyMedia();
+                        refresh();
+
+                        const sEl = w.querySelector('#admEduStatus');
+                        if (sEl) {
+                            sEl.textContent = nextOpen
+                                ? '✅ Başvuru formu AÇILDI (Eğitim sayfasında form aktif edildi)'
+                                : '⛔ Başvuru formu KAPATILDI (Eğitim sayfasında form gizlendi)';
+                            sEl.classList.add('on');
+                        }
+                    };
+                }
 
                 const addQBtn = w.querySelector('#admAddEduQBtn');
                 if (addQBtn) {
@@ -2268,6 +2467,111 @@ const APPS = {
                     };
                 });
 
+                const refreshAccessBtn = w.querySelector('#admRefreshAccessBtn');
+                if (refreshAccessBtn) {
+                    refreshAccessBtn.onclick = async () => {
+                        refreshAccessBtn.textContent = '...';
+                        const [accessRes, vaultRes] = await Promise.all([
+                            sb.from('edu_access').select('*').order('created_at', { ascending: false }),
+                            sb.from('edu_vault').select('drive_url').eq('id', 1).maybeSingle()
+                        ]);
+                        if (!accessRes.error && Array.isArray(accessRes.data)) {
+                            SITE.eduAccessTableMissing = false;
+                            SITE.eduAccess = accessRes.data;
+                        }
+                        if (vaultRes && vaultRes.data && typeof vaultRes.data.drive_url === 'string') {
+                            SITE.eduDriveUrl = vaultRes.data.drive_url;
+                        }
+                        refresh();
+                    };
+                }
+
+                const copyAccessSqlBtn = w.querySelector('#admCopyAccessSqlBtn');
+                if (copyAccessSqlBtn) {
+                    copyAccessSqlBtn.onclick = () => {
+                        const sql = `-- 1. Yetkili Öğrenci E-postaları Tablosu\ncreate table if not exists public.edu_access (\n  id uuid primary key default gen_random_uuid(),\n  created_at timestamptz default now(),\n  email text unique not null,\n  note text default '',\n  status text default 'active'\n);\nalter table public.edu_access enable row level security;\ncreate policy "Allow admin manage edu_access" on public.edu_access for all to authenticated using (true) with check (true);\n\n-- 2. Drive Ayarları Tablosu\ncreate table if not exists public.edu_vault (\n  id int primary key default 1,\n  drive_url text not null default '',\n  updated_at timestamptz default now()\n);\ninsert into public.edu_vault (id, drive_url) values (1, '') on conflict (id) do nothing;\nalter table public.edu_vault enable row level security;\ncreate policy "Allow admin manage edu_vault" on public.edu_vault for all to authenticated using (true) with check (true);\n\n-- 3. Güvenli E-posta Doğrulama Fonksiyonu (RPC)\ncreate or replace function public.verify_edu_access(check_email text)\nreturns jsonb\nlanguage plpgsql\nsecurity definer\nas $\ndeclare\n  cleaned_email text;\n  found_row record;\n  target_url text;\nbegin\n  cleaned_email := lower(trim(coalesce(check_email, '')));\n  if cleaned_email = '' then\n    return jsonb_build_object('success', false, 'error', 'empty_email');\n  end if;\n\n  select * into found_row from public.edu_access where lower(trim(email)) = cleaned_email and status = 'active' limit 1;\n  if found_row is null then\n    return jsonb_build_object('success', false, 'error', 'not_found');\n  end if;\n\n  select drive_url into target_url from public.edu_vault where id = 1 limit 1;\n  if target_url is null or trim(target_url) = '' then\n    return jsonb_build_object('success', false, 'error', 'drive_not_configured');\n  end if;\n\n  return jsonb_build_object('success', true, 'drive_url', target_url);\nend;\n$;\ngrant execute on function public.verify_edu_access(text) to anon, authenticated;`;
+                        navigator.clipboard?.writeText(sql);
+                        copyAccessSqlBtn.textContent = 'SQL Kopyalandı ✓';
+                        setTimeout(() => { copyAccessSqlBtn.textContent = 'SQL Kodunu Kopyala'; }, 2500);
+                    };
+                }
+
+                const saveDriveBtn = w.querySelector('#admSaveDriveUrlBtn');
+                if (saveDriveBtn) {
+                    saveDriveBtn.onclick = async () => {
+                        const urlInp = w.querySelector('#admEduDriveUrlInp');
+                        const url = (urlInp?.value || '').trim();
+                        saveDriveBtn.textContent = 'Kaydediliyor...';
+                        const { error } = await sb.from('edu_vault').upsert({ id: 1, drive_url: url, updated_at: new Date().toISOString() });
+                        if (error) {
+                            alert('Hata: ' + error.message);
+                            saveDriveBtn.textContent = 'Hata!';
+                        } else {
+                            SITE.eduDriveUrl = url;
+                            saveDriveBtn.textContent = 'Kaydedildi ✓';
+                        }
+                        setTimeout(() => { saveDriveBtn.textContent = 'Linki Kaydet'; }, 2200);
+                    };
+                }
+
+                const addStudentBtn = w.querySelector('#admAddStudentBtn');
+                if (addStudentBtn) {
+                    addStudentBtn.onclick = async () => {
+                        const emailInp = w.querySelector('#admNewStudentEmail');
+                        const noteInp = w.querySelector('#admNewStudentNote');
+                        const errEl = w.querySelector('#admStudentAddErr');
+                        if (errEl) errEl.style.display = 'none';
+
+                        const email = (emailInp?.value || '').trim().toLowerCase();
+                        const note = (noteInp?.value || '').trim();
+
+                        if (!email || !email.includes('@')) {
+                            if (errEl) {
+                                errEl.textContent = 'Lütfen geçerli bir e-posta adresi girin.';
+                                errEl.style.display = 'block';
+                            }
+                            return;
+                        }
+
+                        addStudentBtn.textContent = 'Ekleniyor...';
+                        addStudentBtn.disabled = true;
+
+                        const { data, error } = await sb.from('edu_access').insert({
+                            email,
+                            note,
+                            status: 'active'
+                        }).select().single();
+
+                        if (error) {
+                            if (errEl) {
+                                errEl.textContent = error.message.includes('unique') ? 'Bu e-posta adresi zaten ekli!' : ('Hata: ' + error.message);
+                                errEl.style.display = 'block';
+                            }
+                            addStudentBtn.textContent = 'Ekle';
+                            addStudentBtn.disabled = false;
+                        } else {
+                            if (Array.isArray(SITE.eduAccess)) {
+                                SITE.eduAccess.unshift(data);
+                            } else {
+                                SITE.eduAccess = [data];
+                            }
+                            refresh();
+                        }
+                    };
+                }
+
+                w.querySelectorAll('.adm-student-del').forEach(btn => {
+                    btn.onclick = async () => {
+                        const id = btn.dataset.id;
+                        const idx = Number(btn.dataset.idx);
+                        if (!id) return;
+                        if (!confirm('Bu öğrencinin eğitim erişimini kaldırmak istediğinize emin misiniz?')) return;
+                        await sb.from('edu_access').delete().eq('id', id);
+                        SITE.eduAccess.splice(idx, 1);
+                        refresh();
+                    };
+                });
+
                 w.querySelector('#admSaveEduBtn').onclick = async () => {
                     syncDomToEduConfig();
                     applyMedia();
@@ -2294,7 +2598,12 @@ const APPS = {
 };
 
 const dock = $('#dock');
-const winContainer = $('#win');
+let winContainer = $('#win');
+if (!winContainer && document.body) {
+    winContainer = document.createElement('div');
+    winContainer.id = 'win';
+    document.body.appendChild(winContainer);
+}
 let zIndexCounter = 25;
 let winOffsetCounter = 0;
 
@@ -2310,6 +2619,10 @@ function getDockItems() {
 }
 
 function buildDock() {
+    if (!dock) {
+        tick();
+        return;
+    }
     dock.innerHTML = '';
     getDockItems().forEach(item => {
         const el = document.createElement(item.url ? 'a' : 'button');
@@ -2340,6 +2653,7 @@ function buildDock() {
 }
 
 function updateDockIndicators() {
+    if (!dock) return;
     dock.querySelectorAll('.dock-item[data-app]').forEach(btn => {
         const appKey = btn.dataset.app;
         const exists = document.querySelector(`.w[data-k="${appKey}"]`);
@@ -2450,13 +2764,15 @@ function handleAdminSecretTap() {
         brandClickTimer = setTimeout(() => { brandClickCount = 0; }, 600);
     }
 }
-$('#bn').addEventListener('click', handleAdminSecretTap);
+$('#bn')?.addEventListener('click', handleAdminSecretTap);
 $('#logoBox')?.addEventListener('click', handleAdminSecretTap);
+$('#bioPageLogo')?.addEventListener('click', handleAdminSecretTap);
 
 function updateViewportScale() {
+    const hub = $('#hub');
+    if (!hub) return;
     const vw = window.innerWidth;
     const vh = window.innerHeight;
-    const hub = $('#hub');
     const dockEl = $('#dock');
 
     if (vw <= 768) {
