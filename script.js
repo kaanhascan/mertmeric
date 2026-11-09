@@ -1777,19 +1777,9 @@ const APPS = {
 
                         <div class="adm-sec">
                             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-                                <h4 style="margin:0">4. Google Drive & Yetkili Öğrenci Erişimi (${(SITE.eduAccess || []).length})</h4>
-                                <button type="button" class="btn-pill" id="admRefreshAccessBtn" style="padding:4px 10px;font-size:11px">↻ Yenile</button>
+                                <h4 style="margin:0">4. Google Drive Klasörü & Otomatik Erişim (${(SITE.eduAccess || []).length})</h4>
+                                <button type="button" class="btn-pill" id="admRefreshAccessBtn" style="padding:4px 10px;font-size:11px">↻ Drive'dan Yenile</button>
                             </div>
-
-                            ${SITE.eduAccessTableMissing ? `
-                                <div style="padding:10px;border-radius:10px;background:rgba(255,149,0,.14);border:1px solid rgba(255,149,0,.45);font-size:11.5px;line-height:1.5;margin-bottom:12px">
-                                    <b style="color:#ffcc00;display:block;margin-bottom:4px">⚠️ Öğrenci Erişim Tablosu & Güvenlik Fonksiyonu Kurulumu (10 Saniye)</b>
-                                    Öğrencilerin e-posta doğrulaması ve güvenli Drive erişimi için Supabase Dashboard → <b>SQL Editor</b> ekranına aşağıdaki kodu yapıştırıp <b>Run</b> butonuna basın:
-                                    <div style="margin-top:6px;display:flex;gap:6px">
-                                        <button type="button" class="btn-pill active" id="admCopyAccessSqlBtn" style="font-size:11px;padding:4px 10px">SQL Kodunu Kopyala</button>
-                                    </div>
-                                </div>
-                            ` : ''}
 
                             <div style="padding:12px 14px;border-radius:12px;background:${ec.portal_open !== false ? 'rgba(10,132,255,.08)' : 'rgba(255,69,58,.08)'};border:1px solid ${ec.portal_open !== false ? 'rgba(10,132,255,.35)' : 'rgba(255,69,58,.35)'};margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
                                 <div style="font-size:12px;color:#fff">
@@ -1804,7 +1794,7 @@ const APPS = {
                             </div>
 
                             <div class="form-group" style="margin-bottom:14px">
-                                <label style="font-size:11.5px;color:rgba(255,255,255,.75);display:block;margin-bottom:4px">1. Google Drive Klasör Linki (Sadece yetkili öğrencilere açılır)</label>
+                                <label style="font-size:11.5px;color:rgba(255,255,255,.75);display:block;margin-bottom:4px">1. Google Drive Klasör Linki (Sadece bu klasörde yetkisi olanlar girebilir)</label>
                                 <input class="inp" id="admEduDriveUrlInp" value="${esc(SITE.eduDriveUrl || ec.drive_url || '')}" placeholder="https://drive.google.com/drive/folders/..." style="width:100%;margin-bottom:10px">
 
                                 <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px;flex-wrap:wrap">
@@ -1832,35 +1822,21 @@ const APPS = {
                                 <div id="admDriveSyncMsg" style="display:none;font-size:11.5px;margin-top:8px;padding:8px 10px;border-radius:8px"></div>
                             </div>
 
-                            <div style="padding:12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);margin-bottom:12px">
-                                <b style="font-size:12px;color:#fff;display:block;margin-bottom:8px">+ Yetkili Öğrenci E-postası Ekle</b>
-                                <div class="adm-row">
-                                    <input class="inp" id="admNewStudentEmail" type="email" placeholder="ogrenci@gmail.com" style="flex:1">
-                                    <input class="inp" id="admNewStudentNote" placeholder="Öğrenci Adı / Not (İsteğe bağlı)" style="flex:1">
-                                    <button type="button" class="btn-pill active" id="admAddStudentBtn" style="white-space:nowrap;padding:0 14px;font-size:11.5px">Ekle</button>
-                                </div>
-                                <div id="admStudentAddErr" style="display:none;color:#ff453a;font-size:11px;margin-top:6px"></div>
+                            <div style="font-size:11.5px;color:rgba(255,255,255,.7);margin-bottom:6px;display:flex;align-items:center;justify-content:space-between">
+                                <b>📂 Drive Klasöründe Yetkisi Olan E-postalar (${(SITE.eduAccess || []).length})</b>
+                                <span style="font-size:11px;color:rgba(255,255,255,.5)">Google Drive paylaşım ayarlarından otomatik çekilir</span>
                             </div>
-
                             <div class="adm-sub-list">
                                 ${(SITE.eduAccess || []).length === 0 ? `
-                                    <div style="font-size:12px;color:rgba(255,255,255,.5);padding:6px 0">Henüz yetkili öğrenci eklenmedi. Yukarıdan e-posta ekleyebilirsiniz.</div>
-                                ` : (SITE.eduAccess || []).map((st, stIdx) => {
-                    const dt = st.created_at ? new Date(st.created_at).toLocaleDateString('tr-TR') : '';
-                    return `
-                                        <div class="adm-sub-card" style="padding:8px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px">
-                                            <div style="display:flex;flex-direction:column;gap:2px;overflow:hidden">
-                                                <div style="font-size:12.5px;color:#fff;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-                                                    ✉️ ${esc(st.email)}
-                                                </div>
-                                                <div style="font-size:11px;color:rgba(255,255,255,.6)">
-                                                    ${st.note ? `${esc(st.note)} • ` : ''}Kayıt: ${esc(dt)}
-                                                </div>
-                                            </div>
-                                            <button type="button" class="adm-del adm-student-del" data-id="${esc(st.id)}" data-idx="${stIdx}" style="padding:4px 8px;font-size:11px;flex-shrink:0">Sil</button>
+                                    <div style="font-size:12px;color:rgba(255,255,255,.5);padding:6px 0">Drive klasör linki ve Apps Script linkini kaydedip eşitlediğinizde klasöre erişimi olan e-postalar burada otomatik listelenir.</div>
+                                ` : (SITE.eduAccess || []).map(st => `
+                                    <div class="adm-sub-card" style="padding:8px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px">
+                                        <div style="font-size:12.5px;color:#fff;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                                            ✉️ ${esc(st.email)}
                                         </div>
-                                    `;
-                }).join('')}
+                                        <span class="adm-badge-pill open" style="font-size:10px;padding:2px 8px">Drive Yetkili ✓</span>
+                                    </div>
+                                `).join('')}
                             </div>
                         </div>
                     </div>
@@ -2703,37 +2679,32 @@ const APPS = {
                         const driveEmails = data.emails.map(e => String(e || '').trim().toLowerCase()).filter(e => e.includes('@'));
                         const driveSet = new Set(driveEmails);
 
-                        const existingRes = await sb.from('edu_access').select('*');
-                        const existingRows = (!existingRes.error && Array.isArray(existingRes.data)) ? existingRes.data : [];
-                        const existingMap = new Map(existingRows.map(r => [String(r.email || '').trim().toLowerCase(), r]));
+                        // Immediately populate SITE.eduAccess from Google Drive live list
+                        SITE.eduAccess = driveEmails.map(em => ({ email: em, note: 'Google Drive (Otomatik)', status: 'active' }));
 
-                        // 1. Add new emails from Google Drive
-                        const toInsert = [];
-                        for (const em of driveEmails) {
-                            if (!existingMap.has(em)) {
-                                toInsert.push({
-                                    email: em,
-                                    note: 'Google Drive (Otomatik)',
-                                    status: 'active'
-                                });
+                        // Also sync to Supabase edu_access table in background if table exists
+                        try {
+                            const existingRes = await sb.from('edu_access').select('*');
+                            if (!existingRes.error && Array.isArray(existingRes.data)) {
+                                const existingRows = existingRes.data;
+                                const existingMap = new Map(existingRows.map(r => [String(r.email || '').trim().toLowerCase(), r]));
+                                const toInsert = [];
+                                for (const em of driveEmails) {
+                                    if (!existingMap.has(em)) {
+                                        toInsert.push({ email: em, note: 'Google Drive (Otomatik)', status: 'active' });
+                                    }
+                                }
+                                if (toInsert.length > 0) {
+                                    await sb.from('edu_access').upsert(toInsert, { onConflict: 'email' });
+                                }
+                                const toDeleteIds = existingRows
+                                    .filter(r => !driveSet.has(String(r.email || '').trim().toLowerCase()))
+                                    .map(r => r.id);
+                                if (toDeleteIds.length > 0) {
+                                    await sb.from('edu_access').delete().in('id', toDeleteIds);
+                                }
                             }
-                        }
-                        if (toInsert.length > 0) {
-                            await sb.from('edu_access').upsert(toInsert, { onConflict: 'email' });
-                        }
-
-                        // 2. Remove auto-synced emails that were removed from Google Drive
-                        const toDeleteIds = existingRows
-                            .filter(r => r.note === 'Google Drive (Otomatik)' && !driveSet.has(String(r.email || '').trim().toLowerCase()))
-                            .map(r => r.id);
-                        if (toDeleteIds.length > 0) {
-                            await sb.from('edu_access').delete().in('id', toDeleteIds);
-                        }
-
-                        const finalRes = await sb.from('edu_access').select('*').order('created_at', { ascending: false });
-                        if (!finalRes.error && Array.isArray(finalRes.data)) {
-                            SITE.eduAccess = finalRes.data;
-                        }
+                        } catch (_) { }
 
                         refresh();
                         const msgAfter = w.querySelector('#admDriveSyncMsg');
@@ -2805,63 +2776,10 @@ const APPS = {
                     };
                 }
 
-                const addStudentBtn = w.querySelector('#admAddStudentBtn');
-                if (addStudentBtn) {
-                    addStudentBtn.onclick = async () => {
-                        const emailInp = w.querySelector('#admNewStudentEmail');
-                        const noteInp = w.querySelector('#admNewStudentNote');
-                        const errEl = w.querySelector('#admStudentAddErr');
-                        if (errEl) errEl.style.display = 'none';
-
-                        const email = (emailInp?.value || '').trim().toLowerCase();
-                        const note = (noteInp?.value || '').trim();
-
-                        if (!email || !email.includes('@')) {
-                            if (errEl) {
-                                errEl.textContent = 'Lütfen geçerli bir e-posta adresi girin.';
-                                errEl.style.display = 'block';
-                            }
-                            return;
-                        }
-
-                        addStudentBtn.textContent = 'Ekleniyor...';
-                        addStudentBtn.disabled = true;
-
-                        const { data, error } = await sb.from('edu_access').insert({
-                            email,
-                            note,
-                            status: 'active'
-                        }).select().single();
-
-                        if (error) {
-                            if (errEl) {
-                                errEl.textContent = error.message.includes('unique') ? 'Bu e-posta adresi zaten ekli!' : ('Hata: ' + error.message);
-                                errEl.style.display = 'block';
-                            }
-                            addStudentBtn.textContent = 'Ekle';
-                            addStudentBtn.disabled = false;
-                        } else {
-                            if (Array.isArray(SITE.eduAccess)) {
-                                SITE.eduAccess.unshift(data);
-                            } else {
-                                SITE.eduAccess = [data];
-                            }
-                            refresh();
-                        }
-                    };
+                if (SITE.eduConfig.apps_script_url && (SITE.eduDriveUrl || SITE.eduConfig.drive_url) && !window.__driveAutoSyncedOnce) {
+                    window.__driveAutoSyncedOnce = true;
+                    syncDriveEmailsNow();
                 }
-
-                w.querySelectorAll('.adm-student-del').forEach(btn => {
-                    btn.onclick = async () => {
-                        const id = btn.dataset.id;
-                        const idx = Number(btn.dataset.idx);
-                        if (!id) return;
-                        if (!confirm('Bu öğrencinin eğitim erişimini kaldırmak istediğinize emin misiniz?')) return;
-                        await sb.from('edu_access').delete().eq('id', id);
-                        SITE.eduAccess.splice(idx, 1);
-                        refresh();
-                    };
-                });
 
                 w.querySelector('#admSaveEduBtn').onclick = async () => {
                     syncDomToEduConfig();
