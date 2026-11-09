@@ -67,6 +67,8 @@ const SITE = {
         enabled: true,
         applications_open: true,
         portal_open: true,
+        apps_script_url: "",
+        drive_url: "",
         closed_msg_tr: "Bu dönem için eğitim başvurularımız tamamlanmıştır. Yeni dönem duyuruları için takipte kalın veya doğrudan iletişime geçin.",
         closed_msg_en: "Applications for this term are now closed. Follow for updates or contact us directly.",
         btn_tr: "DJ Eğitimi ↗",
@@ -1802,11 +1804,32 @@ const APPS = {
                             </div>
 
                             <div class="form-group" style="margin-bottom:14px">
-                                <label style="font-size:11.5px;color:rgba(255,255,255,.75);display:block;margin-bottom:4px">Google Drive Klasör Linki (Sadece yetkili öğrencilere açılır)</label>
-                                <div style="display:flex;gap:8px">
-                                    <input class="inp" id="admEduDriveUrlInp" value="${esc(SITE.eduDriveUrl || '')}" placeholder="https://drive.google.com/drive/folders/..." style="flex:1">
-                                    <button type="button" class="btn-pill active" id="admSaveDriveUrlBtn" style="white-space:nowrap;padding:0 14px;font-size:11.5px">Linki Kaydet</button>
+                                <label style="font-size:11.5px;color:rgba(255,255,255,.75);display:block;margin-bottom:4px">1. Google Drive Klasör Linki (Sadece yetkili öğrencilere açılır)</label>
+                                <input class="inp" id="admEduDriveUrlInp" value="${esc(SITE.eduDriveUrl || ec.drive_url || '')}" placeholder="https://drive.google.com/drive/folders/..." style="width:100%;margin-bottom:10px">
+
+                                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px;flex-wrap:wrap">
+                                    <label style="font-size:11.5px;color:rgba(255,255,255,.75)">2. Google Apps Script Web App Linki (Drive İzinlerini Otomatik Çekmek İçin)</label>
+                                    <button type="button" class="btn-pill" id="admToggleAppsScriptBoxBtn" style="padding:3px 10px;font-size:11px">📋 Kurulum Kodu & Rehberi</button>
                                 </div>
+                                <input class="inp" id="admEduAppsScriptInp" value="${esc(ec.apps_script_url || '')}" placeholder="https://script.google.com/macros/s/.../exec" style="width:100%;margin-bottom:10px">
+
+                                <div id="admAppsScriptGuideBox" style="display:none;padding:12px;border-radius:12px;background:rgba(10,132,255,.12);border:1px solid rgba(10,132,255,.4);font-size:11.5px;line-height:1.55;margin-bottom:10px">
+                                    <b style="color:#60a5fa;display:block;margin-bottom:6px">⚡ 1 Dakikada Otomatik Google Drive Bağlantısı (Sadece 1 Kere Yapılır)</b>
+                                    <ol style="margin:0 0 8px 16px;padding:0;color:rgba(255,255,255,.85)">
+                                        <li>Drive klasörünün sahibi olan Google hesabıyla <a href="https://script.google.com" target="_blank" rel="noopener" style="color:#60a5fa;text-decoration:underline">script.google.com</a> adresine girip <b>Yeni Proje</b> oluşturun.</li>
+                                        <li>Editördeki mevcut kodu silip aşağıdaki <b>"Apps Script Kodunu Kopyala"</b> butonuyla aldığınız kodu yapıştırın ve kaydedin (Ctrl+S).</li>
+                                        <li>Sağ üstten <b>Dağıt (Deploy) → Yeni dağıtım</b> seçin. Sol üstteki çark ikonundan <b>Web uygulaması</b> seçin.</li>
+                                        <li><b>Şunun adına yürüt:</b> <i>Ben (Me)</i> — <b>Erişimi olanlar:</b> <i>Herkes (Anyone)</i> seçip <b>Dağıt</b> butonuna basın ve izin verin.</li>
+                                        <li>Size verdiği <code>https://script.google.com/macros/s/.../exec</code> linkini yukarıdaki 2. kutuya yapıştırıp <b>Kaydet & Drive'dan Kişileri Çek</b> butonuna basın.</li>
+                                    </ol>
+                                    <button type="button" class="btn-pill active" id="admCopyAppsScriptCodeBtn" style="padding:5px 12px;font-size:11px">📋 Apps Script Kodunu Kopyala</button>
+                                </div>
+
+                                <div style="display:flex;gap:8px;flex-wrap:wrap">
+                                    <button type="button" class="btn-pill active" id="admSaveDriveUrlBtn" style="padding:7px 14px;font-size:11.5px;font-weight:600">💾 Linkleri Kaydet & Drive'dan Kişileri Çek</button>
+                                    <button type="button" class="btn-pill" id="admSyncDriveEmailsBtn" style="padding:7px 14px;font-size:11.5px">🔄 Şimdi Drive'dan Eşitle</button>
+                                </div>
+                                <div id="admDriveSyncMsg" style="display:none;font-size:11.5px;margin-top:8px;padding:8px 10px;border-radius:8px"></div>
                             </div>
 
                             <div style="padding:12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);margin-bottom:12px">
@@ -2331,6 +2354,15 @@ const APPS = {
                     ec.enabled = Boolean(w.querySelector('#admEduEnabled')?.checked);
                     ec.applications_open = SITE.eduConfig.applications_open !== false;
                     ec.portal_open = SITE.eduConfig.portal_open !== false;
+                    const drvVal = w.querySelector('#admEduDriveUrlInp')?.value.trim();
+                    if (typeof drvVal === 'string') {
+                        ec.drive_url = drvVal;
+                        SITE.eduDriveUrl = drvVal;
+                    }
+                    const gasVal = w.querySelector('#admEduAppsScriptInp')?.value.trim();
+                    if (typeof gasVal === 'string') {
+                        ec.apps_script_url = gasVal;
+                    }
                     ec.closed_msg_tr = w.querySelector('#admEduClosedMsgTr')?.value.trim() || '';
                     ec.closed_msg_en = w.querySelector('#admEduClosedMsgEn')?.value.trim() || '';
                     ec.btn_tr = w.querySelector('#admEduBtnTr')?.value.trim() || 'DJ Eğitimi ↗';
@@ -2554,6 +2586,10 @@ const APPS = {
                         if (vaultRes && vaultRes.data && typeof vaultRes.data.drive_url === 'string') {
                             SITE.eduDriveUrl = vaultRes.data.drive_url;
                         }
+                        if (SITE.eduConfig.apps_script_url) {
+                            await syncDriveEmailsNow();
+                            return;
+                        }
                         refresh();
                     };
                 }
@@ -2568,21 +2604,204 @@ const APPS = {
                     };
                 }
 
+                const toggleGasBtn = w.querySelector('#admToggleAppsScriptBoxBtn');
+                const gasGuideBox = w.querySelector('#admAppsScriptGuideBox');
+                if (toggleGasBtn && gasGuideBox) {
+                    toggleGasBtn.onclick = () => {
+                        gasGuideBox.style.display = gasGuideBox.style.display === 'none' ? 'block' : 'none';
+                    };
+                }
+
+                const copyGasBtn = w.querySelector('#admCopyAppsScriptCodeBtn');
+                if (copyGasBtn) {
+                    copyGasBtn.onclick = () => {
+                        const gasCode = [
+                            'function doGet(e) {',
+                            '  try {',
+                            '    var raw = (e && e.parameter && e.parameter.folderId) || "";',
+                            '    var m1 = raw.match(/\\/folders\\/([a-zA-Z0-9_-]{15,})/);',
+                            '    var m2 = raw.match(/[?&]id=([a-zA-Z0-9_-]{15,})/);',
+                            '    var folderId = m1 ? m1[1] : (m2 ? m2[1] : raw.trim());',
+                            '    if (!folderId) return jsonOut({ ok: false, error: "missing_folder_id" });',
+                            '',
+                            '    var folder = DriveApp.getFolderById(folderId);',
+                            '    var emailSet = {};',
+                            '    var emails = [];',
+                            '    function addUser(u) {',
+                            '      if (!u) return;',
+                            '      try {',
+                            '        var em = String(u.getEmail() || "").trim().toLowerCase();',
+                            '        if (em && !emailSet[em]) { emailSet[em] = true; emails.push(em); }',
+                            '      } catch (_) {}',
+                            '    }',
+                            '    addUser(folder.getOwner());',
+                            '    var editors = folder.getEditors();',
+                            '    for (var i = 0; i < editors.length; i++) addUser(editors[i]);',
+                            '    var viewers = folder.getViewers();',
+                            '    for (var j = 0; j < viewers.length; j++) addUser(viewers[j]);',
+                            '',
+                            '    var checkEmail = String((e && e.parameter && e.parameter.email) || "").trim().toLowerCase();',
+                            '    if (checkEmail) {',
+                            '      return jsonOut({ ok: true, allowed: Boolean(emailSet[checkEmail]), driveUrl: folder.getUrl(), total: emails.length });',
+                            '    }',
+                            '    return jsonOut({ ok: true, folderName: folder.getName(), driveUrl: folder.getUrl(), emails: emails });',
+                            '  } catch (err) {',
+                            '    return jsonOut({ ok: false, error: String((err && err.message) || err) });',
+                            '  }',
+                            '}',
+                            '',
+                            'function jsonOut(obj) {',
+                            '  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);',
+                            '}'
+                        ].join('\n');
+                        navigator.clipboard?.writeText(gasCode);
+                        copyGasBtn.textContent = 'Apps Script Kodu Kopyalandı ✓';
+                        setTimeout(() => { copyGasBtn.textContent = '📋 Apps Script Kodunu Kopyala'; }, 2500);
+                    };
+                }
+
+                const syncDriveEmailsNow = async () => {
+                    const syncMsgEl = w.querySelector('#admDriveSyncMsg');
+                    const showSyncMsg = (txt, isErr) => {
+                        if (!syncMsgEl) return;
+                        syncMsgEl.style.display = 'block';
+                        syncMsgEl.style.background = isErr ? 'rgba(255,69,58,.16)' : 'rgba(48,209,88,.16)';
+                        syncMsgEl.style.border = isErr ? '1px solid rgba(255,69,58,.45)' : '1px solid rgba(48,209,88,.45)';
+                        syncMsgEl.style.color = isErr ? '#ff8078' : '#32d74b';
+                        syncMsgEl.textContent = txt;
+                    };
+
+                    const driveUrl = (w.querySelector('#admEduDriveUrlInp')?.value || SITE.eduDriveUrl || SITE.eduConfig.drive_url || '').trim();
+                    const scriptUrl = (w.querySelector('#admEduAppsScriptInp')?.value || SITE.eduConfig.apps_script_url || '').trim();
+
+                    if (!scriptUrl) {
+                        return { synced: false, reason: 'no_script' };
+                    }
+                    if (!driveUrl) {
+                        showSyncMsg('⚠️ Önce Google Drive klasör linkini girin.', true);
+                        return { synced: false, reason: 'no_drive' };
+                    }
+
+                    const m1 = driveUrl.match(/\/folders\/([a-zA-Z0-9_-]{15,})/);
+                    const m2 = driveUrl.match(/[?&]id=([a-zA-Z0-9_-]{15,})/);
+                    const folderId = m1 ? m1[1] : (m2 ? m2[1] : driveUrl);
+
+                    showSyncMsg('⏳ Google Drive klasöründeki izinli e-postalar çekiliyor...', false);
+
+                    try {
+                        const sep = scriptUrl.includes('?') ? '&' : '?';
+                        const res = await fetch(`${scriptUrl}${sep}folderId=${encodeURIComponent(folderId)}&list=1`, {
+                            method: 'GET',
+                            redirect: 'follow'
+                        });
+                        if (!res.ok) throw new Error('HTTP ' + res.status);
+                        const data = await res.json();
+                        if (!data || !data.ok || !Array.isArray(data.emails)) {
+                            throw new Error(data?.error || 'Drive klasör okunamadı');
+                        }
+
+                        const driveEmails = data.emails.map(e => String(e || '').trim().toLowerCase()).filter(e => e.includes('@'));
+                        const driveSet = new Set(driveEmails);
+
+                        const existingRes = await sb.from('edu_access').select('*');
+                        const existingRows = (!existingRes.error && Array.isArray(existingRes.data)) ? existingRes.data : [];
+                        const existingMap = new Map(existingRows.map(r => [String(r.email || '').trim().toLowerCase(), r]));
+
+                        // 1. Add new emails from Google Drive
+                        const toInsert = [];
+                        for (const em of driveEmails) {
+                            if (!existingMap.has(em)) {
+                                toInsert.push({
+                                    email: em,
+                                    note: 'Google Drive (Otomatik)',
+                                    status: 'active'
+                                });
+                            }
+                        }
+                        if (toInsert.length > 0) {
+                            await sb.from('edu_access').upsert(toInsert, { onConflict: 'email' });
+                        }
+
+                        // 2. Remove auto-synced emails that were removed from Google Drive
+                        const toDeleteIds = existingRows
+                            .filter(r => r.note === 'Google Drive (Otomatik)' && !driveSet.has(String(r.email || '').trim().toLowerCase()))
+                            .map(r => r.id);
+                        if (toDeleteIds.length > 0) {
+                            await sb.from('edu_access').delete().in('id', toDeleteIds);
+                        }
+
+                        const finalRes = await sb.from('edu_access').select('*').order('created_at', { ascending: false });
+                        if (!finalRes.error && Array.isArray(finalRes.data)) {
+                            SITE.eduAccess = finalRes.data;
+                        }
+
+                        refresh();
+                        const msgAfter = w.querySelector('#admDriveSyncMsg');
+                        if (msgAfter) {
+                            msgAfter.style.display = 'block';
+                            msgAfter.style.background = 'rgba(48,209,88,.16)';
+                            msgAfter.style.border = '1px solid rgba(48,209,88,.45)';
+                            msgAfter.style.color = '#32d74b';
+                            msgAfter.textContent = `✅ "${data.folderName || 'Drive Klasörü'}" içinden ${driveEmails.length} yetkili e-posta otomatik çekildi ve eşitlendi!`;
+                        }
+                        return { synced: true, count: driveEmails.length };
+                    } catch (err) {
+                        showSyncMsg('❌ Drive senkronizasyon hatası: ' + err.message, true);
+                        return { synced: false, error: err.message };
+                    }
+                };
+
+                const syncDriveBtn = w.querySelector('#admSyncDriveEmailsBtn');
+                if (syncDriveBtn) {
+                    syncDriveBtn.onclick = async () => {
+                        syncDriveBtn.textContent = '⏳ Çekiliyor...';
+                        syncDriveBtn.disabled = true;
+                        await syncDriveEmailsNow();
+                        const b = w.querySelector('#admSyncDriveEmailsBtn');
+                        if (b) {
+                            b.textContent = '🔄 Şimdi Drive\'dan Eşitle';
+                            b.disabled = false;
+                        }
+                    };
+                }
+
                 const saveDriveBtn = w.querySelector('#admSaveDriveUrlBtn');
                 if (saveDriveBtn) {
                     saveDriveBtn.onclick = async () => {
-                        const urlInp = w.querySelector('#admEduDriveUrlInp');
-                        const url = (urlInp?.value || '').trim();
+                        syncDomToEduConfig();
+                        const url = SITE.eduDriveUrl;
                         saveDriveBtn.textContent = 'Kaydediliyor...';
-                        const { error } = await sb.from('edu_vault').upsert({ id: 1, drive_url: url, updated_at: new Date().toISOString() });
-                        if (error) {
-                            alert('Hata: ' + error.message);
-                            saveDriveBtn.textContent = 'Hata!';
-                        } else {
-                            SITE.eduDriveUrl = url;
-                            saveDriveBtn.textContent = 'Kaydedildi ✓';
+                        saveDriveBtn.disabled = true;
+
+                        const [vaultRes, settingsRes] = await Promise.all([
+                            sb.from('edu_vault').upsert({ id: 1, drive_url: url, updated_at: new Date().toISOString() }),
+                            sb.from('site_settings').upsert({ id: 1, dock_icons: buildDockIconsPayload() }, { onConflict: 'id' }).select().single()
+                        ]);
+
+                        if (settingsRes && settingsRes.data) {
+                            applySettingsObject(settingsRes.data);
+                            try {
+                                localStorage.setItem('mert_cloud_settings_v2', JSON.stringify(settingsRes.data));
+                            } catch (_) { }
                         }
-                        setTimeout(() => { saveDriveBtn.textContent = 'Linki Kaydet'; }, 2200);
+
+                        if (vaultRes.error) {
+                            alert('Hata: ' + vaultRes.error.message);
+                            saveDriveBtn.textContent = 'Hata!';
+                            saveDriveBtn.disabled = false;
+                            return;
+                        }
+
+                        if (SITE.eduConfig.apps_script_url) {
+                            await syncDriveEmailsNow();
+                        } else {
+                            const b = w.querySelector('#admSaveDriveUrlBtn');
+                            if (b) {
+                                b.textContent = 'Kaydedildi ✓';
+                                b.disabled = false;
+                                setTimeout(() => { b.textContent = '💾 Linkleri Kaydet & Drive\'dan Kişileri Çek'; }, 2200);
+                            }
+                        }
                     };
                 }
 

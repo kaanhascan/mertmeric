@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://gjbvypvyikrwicdfhler.supabase.co" crossorigin>
     <link rel="preconnect" href="https://fonts.cdnfonts.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.cdnfonts.com/css/sf-pro-display" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="style.css?v=20">
+    <link rel="stylesheet" href="style.css?v=21">
 </head>
 
 <body class="bio-page-body">
@@ -150,157 +150,159 @@
     <div id="win"></div>
 
     <script>
-    (function () {
-        function updateViewportScale() {
-            if (window.innerWidth <= 768) {
-                document.documentElement.style.setProperty('--ui-scale', '1');
-                return;
-            }
-            const scale = Math.max(0.7, Math.min(1, window.innerWidth / 1200));
-            document.documentElement.style.setProperty('--ui-scale', scale.toFixed(4));
-        }
-        updateViewportScale();
-        window.addEventListener('resize', updateViewportScale);
-
-        function tickClock() {
-            const bt = document.getElementById('bt');
-            if (!bt) return;
-            const d = new Date();
-            const L = 'en-US';
-            const t = d.toLocaleTimeString(L, { hour: 'numeric', minute: '2-digit', hour12: true });
-            bt.textContent = d.toLocaleDateString(L, { weekday: 'short', month: 'short', day: 'numeric' }) + "  " + t;
-        }
-        tickClock();
-        setInterval(tickClock, 10000);
-
-        const esc = s => String(s || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-
-        const SB_URL = "https://gjbvypvyikrwicdfhler.supabase.co";
-        const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdqYnZ5cHZ5aWtyd2ljZGZobGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwMjI1MDksImV4cCI6MjEwODU5ODUwOX0.vVEDvyPbZauodNMPG8c_14yJiNqyIBTPmViKiYQJgsM";
-
-        const EDU_STATE = {
-            lang: localStorage.getItem('site_lang') === 'en' ? 'en' : 'tr',
-            backTr: "‹ Geri Dön",
-            backEn: "‹ Back",
-            submitted: false,
-            draftAnswers: {},
-            instagramUrl: "",
-            config: {
-                enabled: true,
-                applications_open: true,
-                portal_open: true,
-                closed_msg_tr: "Bu dönem için eğitim başvurularımız tamamlanmıştır. Yeni dönem duyuruları için takipte kalın veya doğrudan iletişime geçin.",
-                closed_msg_en: "Applications for this term are now closed. Follow for updates or contact us directly.",
-                badge_tr: "Prodüksiyon Eğitimi",
-                badge_en: "Production Academy",
-                title_tr: "DJ & Prodüksiyon Eğitimi Başvuru Formu",
-                title_en: "DJ & Production Academy Application",
-                desc_tr: "Birebir DJ ve prodüksiyon eğitimleri için aşağıdaki formu doldurarak başvurunuzu iletebilirsiniz. Başvurunuz incelendikten sonra sizinle iletişime geçilecektir.",
-                desc_en: "Fill out the form below to apply for 1-on-1 DJ and music production coaching. We will get back to you after reviewing your application.",
-                submit_tr: "Başvuruyu Gönder ↗",
-                submit_en: "Submit Application ↗",
-                questions: [
-                    { id: "q_name", label_tr: "Adınız Soyadınız", label_en: "Full Name", placeholder_tr: "Adınız ve soyadınız", placeholder_en: "Your full name", type: "text", options_tr: "", options_en: "", required: true },
-                    { id: "q_contact", label_tr: "Telefon Numaranız (WhatsApp)", label_en: "Phone Number (WhatsApp)", placeholder_tr: "05XX XXX XX XX", placeholder_en: "+90 5XX XXX XX XX", type: "tel", options_tr: "", options_en: "", required: true },
-                    { id: "q_ig", label_tr: "Instagram Kullanıcı Adınız", label_en: "Instagram Username", placeholder_tr: "@kullaniciadi", placeholder_en: "@username", type: "text", options_tr: "", options_en: "", required: true },
-                    { id: "q_level", label_tr: "Mevcut Seviyeniz / İlgilendiğiniz Alan", label_en: "Current Experience Level / Track", placeholder_tr: "", placeholder_en: "", type: "select", options_tr: "Sıfırdan Başlangıç, Orta Seviye DJ, İleri Seviye / Prodüksiyon", options_en: "Beginner (From Scratch), Intermediate DJ, Advanced / Production", required: true },
-                    { id: "q_note", label_tr: "Hedefleriniz & Eklemek İstedikleriniz", label_en: "Your Goals & Additional Notes", placeholder_tr: "Eğitimden beklentilerinizi, müzik tarzınızı veya sormak istediklerinizi yazabilirsiniz...", placeholder_en: "Tell us about your musical goals, favorite genres, or any questions...", type: "textarea", options_tr: "", options_en: "", required: false }
-                ]
-            }
-        };
-
-        function getProxiedMediaUrl(url) {
-            if (!url || typeof url !== 'string') return url;
-            const prefix = SB_URL + "/storage/v1/object/public/media/";
-            const isLocal = typeof window !== 'undefined' && window.location && (
-                window.location.protocol === 'file:' ||
-                window.location.hostname === 'localhost' ||
-                window.location.hostname === '127.0.0.1'
-            );
-            const dp = "https://mertmeric.music/storage/";
-            let path = url.startsWith(prefix)
-                ? '/storage/' + url.slice(prefix.length)
-                : (url.startsWith(dp) ? '/storage/' + url.slice(dp.length) : url);
-            if (isLocal && path.startsWith('/storage/')) {
-                return 'https://mertmeric.music' + path;
-            }
-            return path;
-        }
-
-        function captureDraftAnswers() {
-            const form = document.getElementById('eduApplyForm');
-            if (!form) return;
-            const qs = EDU_STATE.config.questions || [];
-            qs.forEach((q, idx) => {
-                const key = q.id || ('q_' + idx);
-                if (q.type === 'select') {
-                    const checked = form.querySelector(`input[name="f_${idx}"]:checked`);
-                    if (checked) EDU_STATE.draftAnswers[key] = checked.value;
-                } else {
-                    const inp = form.querySelector(`[name="f_${idx}"]`);
-                    if (inp) EDU_STATE.draftAnswers[key] = inp.value;
+        (function () {
+            function updateViewportScale() {
+                if (window.innerWidth <= 768) {
+                    document.documentElement.style.setProperty('--ui-scale', '1');
+                    return;
                 }
-            });
-        }
-
-        function renderEduPage() {
-            const isEn = EDU_STATE.lang === 'en';
-            const cfg = EDU_STATE.config;
-
-            const backBtn = document.getElementById('eduBackBtn');
-            if (backBtn) backBtn.textContent = isEn ? EDU_STATE.backEn : EDU_STATE.backTr;
-
-            const badge = document.getElementById('eduBadge');
-            if (badge) badge.textContent = isEn ? (cfg.badge_en || 'Production Academy') : (cfg.badge_tr || 'Production Academy');
-
-            document.querySelectorAll('#eduPageLangSwitch .lang-flag-btn').forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.lang === EDU_STATE.lang);
-            });
-
-            const titleEl = document.getElementById('eduPageTitle');
-            if (titleEl) {
-                titleEl.textContent = isEn
-                    ? (cfg.title_en || cfg.title_tr || 'DJ Academy Application')
-                    : (cfg.title_tr || 'DJ & Prodüksiyon Eğitimi Başvuru Formu');
+                const scale = Math.max(0.7, Math.min(1, window.innerWidth / 1200));
+                document.documentElement.style.setProperty('--ui-scale', scale.toFixed(4));
             }
+            updateViewportScale();
+            window.addEventListener('resize', updateViewportScale);
 
-            const pBadge = document.getElementById('eduPortalBadge');
-            const portalCard = document.getElementById('eduPortalCard');
-            if (portalCard) {
-                portalCard.style.display = cfg.portal_open === false ? 'none' : '';
+            function tickClock() {
+                const bt = document.getElementById('bt');
+                if (!bt) return;
+                const d = new Date();
+                const L = 'en-US';
+                const t = d.toLocaleTimeString(L, { hour: 'numeric', minute: '2-digit', hour12: true });
+                bt.textContent = d.toLocaleDateString(L, { weekday: 'short', month: 'short', day: 'numeric' }) + "  " + t;
             }
-            if (cfg.portal_open === false) {
-                const dm = document.getElementById('eduDriveModal');
-                if (dm) {
-                    dm.classList.remove('open');
-                    dm.setAttribute('aria-hidden', 'true');
+            tickClock();
+            setInterval(tickClock, 10000);
+
+            const esc = s => String(s || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+            const SB_URL = "https://gjbvypvyikrwicdfhler.supabase.co";
+            const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdqYnZ5cHZ5aWtyd2ljZGZobGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwMjI1MDksImV4cCI6MjEwODU5ODUwOX0.vVEDvyPbZauodNMPG8c_14yJiNqyIBTPmViKiYQJgsM";
+
+            const EDU_STATE = {
+                lang: localStorage.getItem('site_lang') === 'en' ? 'en' : 'tr',
+                backTr: "‹ Geri Dön",
+                backEn: "‹ Back",
+                submitted: false,
+                draftAnswers: {},
+                instagramUrl: "",
+                config: {
+                    enabled: true,
+                    applications_open: true,
+                    portal_open: true,
+                    apps_script_url: "",
+                    drive_url: "",
+                    closed_msg_tr: "Bu dönem için eğitim başvurularımız tamamlanmıştır. Yeni dönem duyuruları için takipte kalın veya doğrudan iletişime geçin.",
+                    closed_msg_en: "Applications for this term are now closed. Follow for updates or contact us directly.",
+                    badge_tr: "Prodüksiyon Eğitimi",
+                    badge_en: "Production Academy",
+                    title_tr: "DJ & Prodüksiyon Eğitimi Başvuru Formu",
+                    title_en: "DJ & Production Academy Application",
+                    desc_tr: "Birebir DJ ve prodüksiyon eğitimleri için aşağıdaki formu doldurarak başvurunuzu iletebilirsiniz. Başvurunuz incelendikten sonra sizinle iletişime geçilecektir.",
+                    desc_en: "Fill out the form below to apply for 1-on-1 DJ and music production coaching. We will get back to you after reviewing your application.",
+                    submit_tr: "Başvuruyu Gönder ↗",
+                    submit_en: "Submit Application ↗",
+                    questions: [
+                        { id: "q_name", label_tr: "Adınız Soyadınız", label_en: "Full Name", placeholder_tr: "Adınız ve soyadınız", placeholder_en: "Your full name", type: "text", options_tr: "", options_en: "", required: true },
+                        { id: "q_contact", label_tr: "Telefon Numaranız (WhatsApp)", label_en: "Phone Number (WhatsApp)", placeholder_tr: "05XX XXX XX XX", placeholder_en: "+90 5XX XXX XX XX", type: "tel", options_tr: "", options_en: "", required: true },
+                        { id: "q_ig", label_tr: "Instagram Kullanıcı Adınız", label_en: "Instagram Username", placeholder_tr: "@kullaniciadi", placeholder_en: "@username", type: "text", options_tr: "", options_en: "", required: true },
+                        { id: "q_level", label_tr: "Mevcut Seviyeniz / İlgilendiğiniz Alan", label_en: "Current Experience Level / Track", placeholder_tr: "", placeholder_en: "", type: "select", options_tr: "Sıfırdan Başlangıç, Orta Seviye DJ, İleri Seviye / Prodüksiyon", options_en: "Beginner (From Scratch), Intermediate DJ, Advanced / Production", required: true },
+                        { id: "q_note", label_tr: "Hedefleriniz & Eklemek İstedikleriniz", label_en: "Your Goals & Additional Notes", placeholder_tr: "Eğitimden beklentilerinizi, müzik tarzınızı veya sormak istediklerinizi yazabilirsiniz...", placeholder_en: "Tell us about your musical goals, favorite genres, or any questions...", type: "textarea", options_tr: "", options_en: "", required: false }
+                    ]
                 }
+            };
+
+            function getProxiedMediaUrl(url) {
+                if (!url || typeof url !== 'string') return url;
+                const prefix = SB_URL + "/storage/v1/object/public/media/";
+                const isLocal = typeof window !== 'undefined' && window.location && (
+                    window.location.protocol === 'file:' ||
+                    window.location.hostname === 'localhost' ||
+                    window.location.hostname === '127.0.0.1'
+                );
+                const dp = "https://mertmeric.music/storage/";
+                let path = url.startsWith(prefix)
+                    ? '/storage/' + url.slice(prefix.length)
+                    : (url.startsWith(dp) ? '/storage/' + url.slice(dp.length) : url);
+                if (isLocal && path.startsWith('/storage/')) {
+                    return 'https://mertmeric.music' + path;
+                }
+                return path;
             }
-            if (pBadge) pBadge.innerHTML = `<svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg> ${isEn ? 'Student Portal' : 'Öğrenci Portalı'}`;
-            const pTitle = document.getElementById('eduPortalTitle');
-            if (pTitle) pTitle.textContent = isEn ? 'Drive Archive for Enrolled Students' : 'Kayıtlı Öğrenciler İçin Drive Arşivi';
-            const pDesc = document.getElementById('eduPortalDesc');
-            if (pDesc) pDesc.textContent = isEn ? 'If you are already enrolled, sign in with your email to access your Google Drive training files and materials.' : 'Daha önce eğitime katıldıysanız, Google Drive eğitim dosyalarına ve ders materyallerine erişmek için giriş yapın.';
-            const pBtnTxt = document.getElementById('eduPortalBtnTxt');
-            if (pBtnTxt) pBtnTxt.textContent = isEn ? 'Access Course Archive ↗' : 'Eğitim Arşivine Eriş ↗';
 
-            const mTitle = document.getElementById('eduModalTitle');
-            if (mTitle) mTitle.textContent = isEn ? 'Google Drive Course Archive' : 'Google Drive Eğitim Arşivi';
-            const mDesc = document.getElementById('eduModalDesc');
-            if (mDesc) mDesc.textContent = isEn ? 'Enter your registered email address. Once verified, your Google Drive archive will open automatically.' : 'Eğitime kayıtlı olduğunuz e-posta adresinizi girin. Bilgileriniz doğrulandığında Google Drive arşiviniz açılacaktır.';
-            const mBtnTxt = document.getElementById('eduDriveSubmitBtnTxt');
-            if (mBtnTxt) mBtnTxt.textContent = isEn ? 'Verify & Open Archive ↗' : 'Doğrula ve Arşive Git ↗';
+            function captureDraftAnswers() {
+                const form = document.getElementById('eduApplyForm');
+                if (!form) return;
+                const qs = EDU_STATE.config.questions || [];
+                qs.forEach((q, idx) => {
+                    const key = q.id || ('q_' + idx);
+                    if (q.type === 'select') {
+                        const checked = form.querySelector(`input[name="f_${idx}"]:checked`);
+                        if (checked) EDU_STATE.draftAnswers[key] = checked.value;
+                    } else {
+                        const inp = form.querySelector(`[name="f_${idx}"]`);
+                        if (inp) EDU_STATE.draftAnswers[key] = inp.value;
+                    }
+                });
+            }
 
-            const mainArea = document.getElementById('eduMainArea');
-            if (!mainArea) return;
+            function renderEduPage() {
+                const isEn = EDU_STATE.lang === 'en';
+                const cfg = EDU_STATE.config;
 
-            if (EDU_STATE.submitted) {
-                const sTitle = isEn ? 'Application Received ✓' : 'Başvurunuz Alındı ✓';
-                const sDesc = isEn
-                    ? 'Your application has been submitted successfully. We will contact you shortly.'
-                    : 'Başvurunuz başarıyla kaydedildi. En kısa sürede sizinle iletişime geçeceğiz.';
-                const backHome = isEn ? '‹ Back to Home' : '‹ Ana Sayfaya Dön';
-                mainArea.innerHTML = `
+                const backBtn = document.getElementById('eduBackBtn');
+                if (backBtn) backBtn.textContent = isEn ? EDU_STATE.backEn : EDU_STATE.backTr;
+
+                const badge = document.getElementById('eduBadge');
+                if (badge) badge.textContent = isEn ? (cfg.badge_en || 'Production Academy') : (cfg.badge_tr || 'Production Academy');
+
+                document.querySelectorAll('#eduPageLangSwitch .lang-flag-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.lang === EDU_STATE.lang);
+                });
+
+                const titleEl = document.getElementById('eduPageTitle');
+                if (titleEl) {
+                    titleEl.textContent = isEn
+                        ? (cfg.title_en || cfg.title_tr || 'DJ Academy Application')
+                        : (cfg.title_tr || 'DJ & Prodüksiyon Eğitimi Başvuru Formu');
+                }
+
+                const pBadge = document.getElementById('eduPortalBadge');
+                const portalCard = document.getElementById('eduPortalCard');
+                if (portalCard) {
+                    portalCard.style.display = cfg.portal_open === false ? 'none' : '';
+                }
+                if (cfg.portal_open === false) {
+                    const dm = document.getElementById('eduDriveModal');
+                    if (dm) {
+                        dm.classList.remove('open');
+                        dm.setAttribute('aria-hidden', 'true');
+                    }
+                }
+                if (pBadge) pBadge.innerHTML = `<svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg> ${isEn ? 'Student Portal' : 'Öğrenci Portalı'}`;
+                const pTitle = document.getElementById('eduPortalTitle');
+                if (pTitle) pTitle.textContent = isEn ? 'Drive Archive for Enrolled Students' : 'Kayıtlı Öğrenciler İçin Drive Arşivi';
+                const pDesc = document.getElementById('eduPortalDesc');
+                if (pDesc) pDesc.textContent = isEn ? 'If you are already enrolled, sign in with your email to access your Google Drive training files and materials.' : 'Daha önce eğitime katıldıysanız, Google Drive eğitim dosyalarına ve ders materyallerine erişmek için giriş yapın.';
+                const pBtnTxt = document.getElementById('eduPortalBtnTxt');
+                if (pBtnTxt) pBtnTxt.textContent = isEn ? 'Access Course Archive ↗' : 'Eğitim Arşivine Eriş ↗';
+
+                const mTitle = document.getElementById('eduModalTitle');
+                if (mTitle) mTitle.textContent = isEn ? 'Google Drive Course Archive' : 'Google Drive Eğitim Arşivi';
+                const mDesc = document.getElementById('eduModalDesc');
+                if (mDesc) mDesc.textContent = isEn ? 'Enter your registered email address. Once verified, your Google Drive archive will open automatically.' : 'Eğitime kayıtlı olduğunuz e-posta adresinizi girin. Bilgileriniz doğrulandığında Google Drive arşiviniz açılacaktır.';
+                const mBtnTxt = document.getElementById('eduDriveSubmitBtnTxt');
+                if (mBtnTxt) mBtnTxt.textContent = isEn ? 'Verify & Open Archive ↗' : 'Doğrula ve Arşive Git ↗';
+
+                const mainArea = document.getElementById('eduMainArea');
+                if (!mainArea) return;
+
+                if (EDU_STATE.submitted) {
+                    const sTitle = isEn ? 'Application Received ✓' : 'Başvurunuz Alındı ✓';
+                    const sDesc = isEn
+                        ? 'Your application has been submitted successfully. We will contact you shortly.'
+                        : 'Başvurunuz başarıyla kaydedildi. En kısa sürede sizinle iletişime geçeceğiz.';
+                    const backHome = isEn ? '‹ Back to Home' : '‹ Ana Sayfaya Dön';
+                    mainArea.innerHTML = `
                     <div class="edu-success-box">
                         <h3>${esc(sTitle)}</h3>
                         <p>${esc(sDesc)}</p>
@@ -309,19 +311,19 @@
                         </div>
                     </div>
                 `;
-                return;
-            }
+                    return;
+                }
 
-            if (cfg.applications_open === false) {
-                const cBadge = isEn ? 'Applications Closed' : 'Başvurular Kapandı';
-                const cTitle = isEn ? 'Applications Closed for This Term' : 'Bu Dönem Başvuruları Kapanmıştır';
-                const cDesc = isEn
-                    ? (cfg.closed_msg_en || 'Applications for this term are currently closed. Follow our announcements for upcoming terms or reach out on Instagram.')
-                    : (cfg.closed_msg_tr || 'Bu dönem için eğitim başvurularımız tamamlanmıştır. Yeni dönem duyuruları için takipte kalın veya Instagram üzerinden iletişime geçin.');
-                const igUrl = EDU_STATE.instagramUrl || 'https://instagram.com/mertmeric';
-                const backHome = isEn ? '‹ Back to Home' : '‹ Ana Sayfaya Dön';
+                if (cfg.applications_open === false) {
+                    const cBadge = isEn ? 'Applications Closed' : 'Başvurular Kapandı';
+                    const cTitle = isEn ? 'Applications Closed for This Term' : 'Bu Dönem Başvuruları Kapanmıştır';
+                    const cDesc = isEn
+                        ? (cfg.closed_msg_en || 'Applications for this term are currently closed. Follow our announcements for upcoming terms or reach out on Instagram.')
+                        : (cfg.closed_msg_tr || 'Bu dönem için eğitim başvurularımız tamamlanmıştır. Yeni dönem duyuruları için takipte kalın veya Instagram üzerinden iletişime geçin.');
+                    const igUrl = EDU_STATE.instagramUrl || 'https://instagram.com/mertmeric';
+                    const backHome = isEn ? '‹ Back to Home' : '‹ Ana Sayfaya Dön';
 
-                mainArea.innerHTML = `
+                    mainArea.innerHTML = `
                     <div class="edu-closed-box">
                         <div class="edu-closed-icon">
                             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -339,43 +341,43 @@
                         </div>
                     </div>
                 `;
-                return;
-            }
+                    return;
+                }
 
-            if (!document.getElementById('eduApplyForm')) {
-                mainArea.innerHTML = `
+                if (!document.getElementById('eduApplyForm')) {
+                    mainArea.innerHTML = `
                     <p class="edu-form-intro" id="eduPageDesc"></p>
                     <form id="eduApplyForm" class="edu-form"></form>
                     <div id="eduFormErr" style="display:none;color:#ff453a;font-size:13px;text-align:center;margin-bottom:14px"></div>
                 `;
-            }
+                }
 
-            const descEl = document.getElementById('eduPageDesc');
-            if (descEl) {
-                descEl.textContent = isEn
-                    ? (cfg.desc_en || cfg.desc_tr || '')
-                    : (cfg.desc_tr || '');
-            }
+                const descEl = document.getElementById('eduPageDesc');
+                if (descEl) {
+                    descEl.textContent = isEn
+                        ? (cfg.desc_en || cfg.desc_tr || '')
+                        : (cfg.desc_tr || '');
+                }
 
-            const form = document.getElementById('eduApplyForm');
-            if (!form) return;
+                const form = document.getElementById('eduApplyForm');
+                if (!form) return;
 
-            const qs = Array.isArray(cfg.questions) ? cfg.questions : [];
-            form.innerHTML = qs.map((q, idx) => {
-                const key = q.id || ('q_' + idx);
-                const savedVal = EDU_STATE.draftAnswers[key] || '';
-                const label = isEn ? (q.label_en || q.label_tr) : (q.label_tr || q.label_en);
-                const ph = isEn ? (q.placeholder_en || q.placeholder_tr || '') : (q.placeholder_tr || '');
-                const reqMark = q.required ? `<span class="edu-req">*</span>` : '';
+                const qs = Array.isArray(cfg.questions) ? cfg.questions : [];
+                form.innerHTML = qs.map((q, idx) => {
+                    const key = q.id || ('q_' + idx);
+                    const savedVal = EDU_STATE.draftAnswers[key] || '';
+                    const label = isEn ? (q.label_en || q.label_tr) : (q.label_tr || q.label_en);
+                    const ph = isEn ? (q.placeholder_en || q.placeholder_tr || '') : (q.placeholder_tr || '');
+                    const reqMark = q.required ? `<span class="edu-req">*</span>` : '';
 
-                let inputHtml = '';
-                if (q.type === 'textarea') {
-                    inputHtml = `<textarea class="edu-inp" name="f_${idx}" rows="3" placeholder="${esc(ph)}" ${q.required ? 'required' : ''}>${esc(savedVal)}</textarea>`;
-                } else if (q.type === 'select') {
-                    const rawOpts = isEn ? (q.options_en || q.options_tr || '') : (q.options_tr || '');
-                    const opts = rawOpts.split(',').map(s => s.trim()).filter(Boolean);
-                    if (opts.length) {
-                        inputHtml = `
+                    let inputHtml = '';
+                    if (q.type === 'textarea') {
+                        inputHtml = `<textarea class="edu-inp" name="f_${idx}" rows="3" placeholder="${esc(ph)}" ${q.required ? 'required' : ''}>${esc(savedVal)}</textarea>`;
+                    } else if (q.type === 'select') {
+                        const rawOpts = isEn ? (q.options_en || q.options_tr || '') : (q.options_tr || '');
+                        const opts = rawOpts.split(',').map(s => s.trim()).filter(Boolean);
+                        if (opts.length) {
+                            inputHtml = `
                             <div class="edu-options-grid">
                                 ${opts.map((opt, oIdx) => `
                                     <label class="edu-opt-pill">
@@ -385,449 +387,474 @@
                                 `).join('')}
                             </div>
                         `;
+                        } else {
+                            inputHtml = `<input type="text" class="edu-inp" name="f_${idx}" value="${esc(savedVal)}" placeholder="${esc(ph)}" ${q.required ? 'required' : ''}>`;
+                        }
                     } else {
-                        inputHtml = `<input type="text" class="edu-inp" name="f_${idx}" value="${esc(savedVal)}" placeholder="${esc(ph)}" ${q.required ? 'required' : ''}>`;
+                        const inpType = ['tel', 'email'].includes(q.type) ? q.type : 'text';
+                        inputHtml = `<input type="${inpType}" class="edu-inp" name="f_${idx}" value="${esc(savedVal)}" placeholder="${esc(ph)}" ${q.required ? 'required' : ''}>`;
                     }
-                } else {
-                    const inpType = ['tel', 'email'].includes(q.type) ? q.type : 'text';
-                    inputHtml = `<input type="${inpType}" class="edu-inp" name="f_${idx}" value="${esc(savedVal)}" placeholder="${esc(ph)}" ${q.required ? 'required' : ''}>`;
-                }
 
-                return `
+                    return `
                     <div class="edu-field">
                         <label class="edu-label">${esc(label)} ${reqMark}</label>
                         ${inputHtml}
                     </div>
                 `;
-            }).join('') + `
+                }).join('') + `
                 <button type="submit" class="edu-submit-btn" id="eduSubmitBtn">
                     ${esc(isEn ? (cfg.submit_en || 'Submit Application ↗') : (cfg.submit_tr || 'Başvuruyu Gönder ↗'))}
                 </button>
             `;
-        }
+            }
 
-        document.querySelectorAll('#eduPageLangSwitch .lang-flag-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                captureDraftAnswers();
-                EDU_STATE.lang = btn.dataset.lang === 'en' ? 'en' : 'tr';
-                try { localStorage.setItem('site_lang', EDU_STATE.lang); } catch (_) { }
-                renderEduPage();
+            document.querySelectorAll('#eduPageLangSwitch .lang-flag-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    captureDraftAnswers();
+                    EDU_STATE.lang = btn.dataset.lang === 'en' ? 'en' : 'tr';
+                    try { localStorage.setItem('site_lang', EDU_STATE.lang); } catch (_) { }
+                    renderEduPage();
+                });
             });
-        });
 
-        let activeBioBg = '';
-        const bioBgBlobCache = new Map();
+            let activeBioBg = '';
+            const bioBgBlobCache = new Map();
 
-        function applyEduSettings(d) {
-            if (!d || typeof d !== 'object') return;
-            if (d.logo_image) {
-                const logoImg = document.getElementById('bioLogoImg');
-                const proxiedLogo = getProxiedMediaUrl(d.logo_image);
-                if (logoImg.getAttribute('src') !== proxiedLogo) logoImg.src = proxiedLogo;
-                logoImg.style.display = 'block';
-                document.getElementById('bioLogoText').style.display = 'none';
-            } else if (d.name) {
-                const logoTxt = document.getElementById('bioLogoText');
-                logoTxt.textContent = d.name;
-                logoTxt.style.display = 'block';
-            }
+            function applyEduSettings(d) {
+                if (!d || typeof d !== 'object') return;
+                if (d.logo_image) {
+                    const logoImg = document.getElementById('bioLogoImg');
+                    const proxiedLogo = getProxiedMediaUrl(d.logo_image);
+                    if (logoImg.getAttribute('src') !== proxiedLogo) logoImg.src = proxiedLogo;
+                    logoImg.style.display = 'block';
+                    document.getElementById('bioLogoText').style.display = 'none';
+                } else if (d.name) {
+                    const logoTxt = document.getElementById('bioLogoText');
+                    logoTxt.textContent = d.name;
+                    logoTxt.style.display = 'block';
+                }
 
-            const cloudBg = getProxiedMediaUrl(d.bg_gif || d.bg_video || '');
-            if (cloudBg) {
-                const isVid = /\.(mp4|webm|mov|m4v)(\?.*)?$/i.test(cloudBg);
-                if (isVid) {
-                    const v = document.getElementById('bioBgv');
-                    v.style.display = 'block';
-                    if (activeBioBg !== cloudBg) {
-                        activeBioBg = cloudBg;
-                        const cachedBlob = bioBgBlobCache.get(cloudBg);
-                        if (cachedBlob) {
-                            v.src = cachedBlob;
-                            v.play().catch(() => { });
-                        } else {
-                            fetch(cloudBg)
-                                .then(r => {
-                                    if (!r.ok) throw new Error('status ' + r.status);
-                                    return r.blob();
-                                })
-                                .then(blob => {
-                                    const blobUrl = URL.createObjectURL(blob);
-                                    bioBgBlobCache.set(cloudBg, blobUrl);
-                                    if (activeBioBg === cloudBg) {
-                                        v.src = blobUrl;
-                                        v.play().catch(() => { });
-                                    }
-                                })
-                                .catch(() => {
-                                    if (activeBioBg === cloudBg) {
-                                        if (v.getAttribute('src') !== cloudBg) v.src = cloudBg;
-                                        v.play().catch(() => { });
-                                    }
-                                });
+                const cloudBg = getProxiedMediaUrl(d.bg_gif || d.bg_video || '');
+                if (cloudBg) {
+                    const isVid = /\.(mp4|webm|mov|m4v)(\?.*)?$/i.test(cloudBg);
+                    if (isVid) {
+                        const v = document.getElementById('bioBgv');
+                        v.style.display = 'block';
+                        if (activeBioBg !== cloudBg) {
+                            activeBioBg = cloudBg;
+                            const cachedBlob = bioBgBlobCache.get(cloudBg);
+                            if (cachedBlob) {
+                                v.src = cachedBlob;
+                                v.play().catch(() => { });
+                            } else {
+                                fetch(cloudBg)
+                                    .then(r => {
+                                        if (!r.ok) throw new Error('status ' + r.status);
+                                        return r.blob();
+                                    })
+                                    .then(blob => {
+                                        const blobUrl = URL.createObjectURL(blob);
+                                        bioBgBlobCache.set(cloudBg, blobUrl);
+                                        if (activeBioBg === cloudBg) {
+                                            v.src = blobUrl;
+                                            v.play().catch(() => { });
+                                        }
+                                    })
+                                    .catch(() => {
+                                        if (activeBioBg === cloudBg) {
+                                            if (v.getAttribute('src') !== cloudBg) v.src = cloudBg;
+                                            v.play().catch(() => { });
+                                        }
+                                    });
+                            }
                         }
-                    }
-                } else {
-                    activeBioBg = cloudBg;
-                    const g = document.getElementById('bggif');
-                    if (g.getAttribute('src') !== cloudBg) g.src = cloudBg;
-                    g.style.display = 'block';
-                }
-            }
-
-            if (d.brand) {
-                const bn = document.getElementById('bn');
-                if (bn) bn.textContent = d.brand;
-            }
-            if (d.bio_back_text) EDU_STATE.backTr = d.bio_back_text;
-            if (d.bio_footer_label) {
-                const footLbl = document.getElementById('bioFooterLbl');
-                if (footLbl) footLbl.textContent = d.bio_footer_label;
-            }
-            if (d.email) {
-                const mailEl = document.getElementById('bioFooterMail');
-                if (mailEl) {
-                    mailEl.textContent = d.email;
-                    mailEl.href = 'mailto:' + d.email;
-                }
-            }
-            if (d.instagram_url) {
-                EDU_STATE.instagramUrl = d.instagram_url;
-                document.getElementById('bioLinkIg').href = d.instagram_url;
-            }
-            if (d.soundcloud_url) document.getElementById('bioLinkSc').href = d.soundcloud_url;
-            if (d.spotify_url) document.getElementById('bioLinkSp').href = d.spotify_url;
-            if (d.youtube_url) document.getElementById('bioLinkYt').href = d.youtube_url;
-
-            if (d.dock_icons && d.dock_icons._edu_config && typeof d.dock_icons._edu_config === 'object') {
-                const ec = d.dock_icons._edu_config;
-                EDU_STATE.config = {
-                    ...EDU_STATE.config,
-                    ...ec,
-                    badge_tr: (!ec.badge_tr || ec.badge_tr === 'DJ ACADEMY') ? 'Prodüksiyon Akademisi' : ec.badge_tr,
-                    badge_en: (!ec.badge_en || ec.badge_en === 'DJ ACADEMY') ? 'Production Academy' : ec.badge_en,
-                    questions: Array.isArray(ec.questions) ? ec.questions : EDU_STATE.config.questions
-                };
-            }
-            captureDraftAnswers();
-            renderEduPage();
-        }
-
-        let appliedCachedEdu = false;
-        try {
-            const cached = JSON.parse(localStorage.getItem('mert_cloud_settings_v2') || 'null');
-            if (cached) {
-                appliedCachedEdu = true;
-                applyEduSettings(cached);
-            }
-        } catch (_) { }
-        if (!appliedCachedEdu) {
-            renderEduPage();
-        }
-
-        async function fetchLatestEduSettings() {
-            try {
-                const res = await fetch(SB_URL + "/rest/v1/site_settings?id=eq.1&select=*", {
-                    cache: "no-store",
-                    headers: { apikey: SB_KEY, Authorization: "Bearer " + SB_KEY }
-                });
-                if (!res.ok) return;
-                const rows = await res.json();
-                const data = Array.isArray(rows) ? rows[0] : null;
-                if (!data) return;
-                applyEduSettings(data);
-                try {
-                    localStorage.setItem('mert_cloud_settings_v2', JSON.stringify(data));
-                } catch (_) { }
-            } catch (_) { }
-        }
-
-        fetchLatestEduSettings();
-        window.addEventListener('focus', fetchLatestEduSettings);
-        window.addEventListener('storage', e => {
-            if (e.key === 'mert_cloud_settings_v2' && e.newValue) {
-                try {
-                    applyEduSettings(JSON.parse(e.newValue));
-                } catch (_) { }
-            }
-        });
-
-        document.addEventListener('submit', async e => {
-            if (e.target && e.target.id === 'eduApplyForm') {
-                e.preventDefault();
-                const form = e.target;
-                const btn = document.getElementById('eduSubmitBtn');
-                const errEl = document.getElementById('eduFormErr');
-                if (errEl) errEl.style.display = 'none';
-
-                const qs = Array.isArray(EDU_STATE.config.questions) ? EDU_STATE.config.questions : [];
-                const answers = qs.map((q, idx) => {
-                    let val = '';
-                    if (q.type === 'select' && form.querySelector(`input[type="radio"][name="f_${idx}"]`)) {
-                        const checked = form.querySelector(`input[name="f_${idx}"]:checked`);
-                        val = checked ? checked.value.trim() : '';
                     } else {
-                        const inp = form.querySelector(`[name="f_${idx}"]`);
-                        val = inp ? inp.value.trim() : '';
+                        activeBioBg = cloudBg;
+                        const g = document.getElementById('bggif');
+                        if (g.getAttribute('src') !== cloudBg) g.src = cloudBg;
+                        g.style.display = 'block';
                     }
-                    return {
-                        question_id: q.id || ('q_' + idx),
-                        question: q.label_tr || q.label_en || ('Soru ' + (idx + 1)),
-                        answer: val
-                    };
-                });
-
-                if (btn) {
-                    btn.disabled = true;
-                    btn.textContent = EDU_STATE.lang === 'en' ? 'Submitting...' : 'Gönderiliyor...';
                 }
 
+                if (d.brand) {
+                    const bn = document.getElementById('bn');
+                    if (bn) bn.textContent = d.brand;
+                }
+                if (d.bio_back_text) EDU_STATE.backTr = d.bio_back_text;
+                if (d.bio_footer_label) {
+                    const footLbl = document.getElementById('bioFooterLbl');
+                    if (footLbl) footLbl.textContent = d.bio_footer_label;
+                }
+                if (d.email) {
+                    const mailEl = document.getElementById('bioFooterMail');
+                    if (mailEl) {
+                        mailEl.textContent = d.email;
+                        mailEl.href = 'mailto:' + d.email;
+                    }
+                }
+                if (d.instagram_url) {
+                    EDU_STATE.instagramUrl = d.instagram_url;
+                    document.getElementById('bioLinkIg').href = d.instagram_url;
+                }
+                if (d.soundcloud_url) document.getElementById('bioLinkSc').href = d.soundcloud_url;
+                if (d.spotify_url) document.getElementById('bioLinkSp').href = d.spotify_url;
+                if (d.youtube_url) document.getElementById('bioLinkYt').href = d.youtube_url;
+
+                if (d.dock_icons && d.dock_icons._edu_config && typeof d.dock_icons._edu_config === 'object') {
+                    const ec = d.dock_icons._edu_config;
+                    EDU_STATE.config = {
+                        ...EDU_STATE.config,
+                        ...ec,
+                        badge_tr: (!ec.badge_tr || ec.badge_tr === 'DJ ACADEMY') ? 'Prodüksiyon Akademisi' : ec.badge_tr,
+                        badge_en: (!ec.badge_en || ec.badge_en === 'DJ ACADEMY') ? 'Production Academy' : ec.badge_en,
+                        questions: Array.isArray(ec.questions) ? ec.questions : EDU_STATE.config.questions
+                    };
+                }
+                captureDraftAnswers();
+                renderEduPage();
+            }
+
+            let appliedCachedEdu = false;
+            try {
+                const cached = JSON.parse(localStorage.getItem('mert_cloud_settings_v2') || 'null');
+                if (cached) {
+                    appliedCachedEdu = true;
+                    applyEduSettings(cached);
+                }
+            } catch (_) { }
+            if (!appliedCachedEdu) {
+                renderEduPage();
+            }
+
+            async function fetchLatestEduSettings() {
                 try {
-                    const res = await fetch(SB_URL + "/rest/v1/edu_submissions", {
-                        method: "POST",
-                        headers: {
-                            apikey: SB_KEY,
-                            Authorization: "Bearer " + SB_KEY,
-                            "Content-Type": "application/json",
-                            Prefer: "return=minimal"
-                        },
-                        body: JSON.stringify({
-                            answers,
-                            is_read: false
-                        })
+                    const res = await fetch(SB_URL + "/rest/v1/site_settings?id=eq.1&select=*", {
+                        cache: "no-store",
+                        headers: { apikey: SB_KEY, Authorization: "Bearer " + SB_KEY }
+                    });
+                    if (!res.ok) return;
+                    const rows = await res.json();
+                    const data = Array.isArray(rows) ? rows[0] : null;
+                    if (!data) return;
+                    applyEduSettings(data);
+                    try {
+                        localStorage.setItem('mert_cloud_settings_v2', JSON.stringify(data));
+                    } catch (_) { }
+                } catch (_) { }
+            }
+
+            fetchLatestEduSettings();
+            window.addEventListener('focus', fetchLatestEduSettings);
+            window.addEventListener('storage', e => {
+                if (e.key === 'mert_cloud_settings_v2' && e.newValue) {
+                    try {
+                        applyEduSettings(JSON.parse(e.newValue));
+                    } catch (_) { }
+                }
+            });
+
+            document.addEventListener('submit', async e => {
+                if (e.target && e.target.id === 'eduApplyForm') {
+                    e.preventDefault();
+                    const form = e.target;
+                    const btn = document.getElementById('eduSubmitBtn');
+                    const errEl = document.getElementById('eduFormErr');
+                    if (errEl) errEl.style.display = 'none';
+
+                    const qs = Array.isArray(EDU_STATE.config.questions) ? EDU_STATE.config.questions : [];
+                    const answers = qs.map((q, idx) => {
+                        let val = '';
+                        if (q.type === 'select' && form.querySelector(`input[type="radio"][name="f_${idx}"]`)) {
+                            const checked = form.querySelector(`input[name="f_${idx}"]:checked`);
+                            val = checked ? checked.value.trim() : '';
+                        } else {
+                            const inp = form.querySelector(`[name="f_${idx}"]`);
+                            val = inp ? inp.value.trim() : '';
+                        }
+                        return {
+                            question_id: q.id || ('q_' + idx),
+                            question: q.label_tr || q.label_en || ('Soru ' + (idx + 1)),
+                            answer: val
+                        };
                     });
 
-                    if (!res.ok) {
-                        const errTxt = await res.text();
-                        throw new Error(errTxt || ('HTTP ' + res.status));
-                    }
-
-                    EDU_STATE.submitted = true;
-                    renderEduPage();
-                } catch (err) {
-                    if (errEl) {
-                        errEl.textContent = EDU_STATE.lang === 'en'
-                            ? 'Could not submit application. Please try again or contact via Instagram/Email.'
-                            : 'Başvuru gönderilirken bir hata oluştu. Lütfen tekrar deneyin veya Instagram/E-posta üzerinden ulaşın.';
-                        errEl.style.display = 'block';
-                    }
                     if (btn) {
-                        btn.disabled = false;
-                        btn.textContent = EDU_STATE.lang === 'en'
-                            ? (EDU_STATE.config.submit_en || 'Submit Application ↗')
-                            : (EDU_STATE.config.submit_tr || 'Başvuruyu Gönder ↗');
-                    }
-                }
-            }
-        });
-
-        // Drive Access Modal Logic
-        const driveModal = document.getElementById('eduDriveModal');
-        const openDriveBtn = document.getElementById('openEduDriveModalBtn');
-        const closeDriveBtn = document.getElementById('closeEduDriveModalBtn');
-        const driveForm = document.getElementById('eduDriveAuthForm');
-        const driveEmailInp = document.getElementById('eduDriveEmailInput');
-        const driveStatus = document.getElementById('eduDriveStatus');
-        const driveSubmitBtn = document.getElementById('eduDriveSubmitBtn');
-        const driveSubmitTxt = document.getElementById('eduDriveSubmitBtnTxt');
-
-        function setDriveStatus(type, htmlContent) {
-            if (!driveStatus) return;
-            if (!type) {
-                driveStatus.className = 'edu-modal-status';
-                driveStatus.style.display = 'none';
-                driveStatus.innerHTML = '';
-                return;
-            }
-            driveStatus.className = 'edu-modal-status';
-            void driveStatus.offsetWidth;
-            driveStatus.className = 'edu-modal-status ' + type;
-            driveStatus.style.display = 'block';
-            driveStatus.innerHTML = htmlContent;
-        }
-
-        function triggerDriveInputError() {
-            if (!driveEmailInp) return;
-            driveEmailInp.classList.remove('edu-inp-error');
-            void driveEmailInp.offsetWidth;
-            driveEmailInp.classList.add('edu-inp-error');
-        }
-
-        if (driveEmailInp) {
-            driveEmailInp.addEventListener('input', () => {
-                driveEmailInp.classList.remove('edu-inp-error');
-            });
-        }
-
-        function openEduModal() {
-            if (!driveModal) return;
-            driveModal.classList.add('open');
-            driveModal.setAttribute('aria-hidden', 'false');
-            setDriveStatus('', '');
-            if (driveEmailInp) driveEmailInp.classList.remove('edu-inp-error');
-            if (driveSubmitBtn) {
-                driveSubmitBtn.disabled = false;
-                driveSubmitBtn.style.display = '';
-            }
-            if (driveEmailInp) {
-                setTimeout(() => driveEmailInp.focus(), 80);
-            }
-        }
-
-        function closeEduModal() {
-            if (!driveModal) return;
-            driveModal.classList.remove('open');
-            driveModal.setAttribute('aria-hidden', 'true');
-        }
-
-        if (openDriveBtn) openDriveBtn.addEventListener('click', openEduModal);
-        if (closeDriveBtn) closeDriveBtn.addEventListener('click', closeEduModal);
-
-        if (driveModal) {
-            driveModal.addEventListener('click', e => {
-                if (e.target === driveModal) closeEduModal();
-            });
-        }
-
-        document.addEventListener('keydown', e => {
-            if (e.key === 'Escape' && driveModal && driveModal.classList.contains('open')) {
-                closeEduModal();
-            }
-        });
-
-        if (driveForm) {
-            driveForm.addEventListener('submit', async e => {
-                e.preventDefault();
-                const isEn = EDU_STATE.lang === 'en';
-                const email = String(driveEmailInp?.value || '').trim().toLowerCase();
-
-                if (!email || !email.includes('@') || email.length < 5) {
-                    triggerDriveInputError();
-                    setDriveStatus('error', isEn
-                        ? '<b>⚠️ Invalid Email</b><div style="margin-top:4px">Please enter a valid email address.</div>'
-                        : '<b>⚠️ Geçersiz E-posta</b><div style="margin-top:4px">Lütfen geçerli bir e-posta adresi girin.</div>'
-                    );
-                    return;
-                }
-
-                if (driveEmailInp) driveEmailInp.classList.remove('edu-inp-error');
-                if (driveSubmitBtn) driveSubmitBtn.disabled = true;
-                if (driveSubmitTxt) driveSubmitTxt.textContent = isEn ? 'Verifying...' : 'Doğrulanıyor...';
-                setDriveStatus('loading', isEn
-                    ? '⏳ Checking your enrollment...'
-                    : '⏳ Erişim yetkiniz kontrol ediliyor...'
-                );
-
-                try {
-                    let driveUrl = '';
-                    let verifyOk = false;
-
-                    // 1. Try serverless API endpoint
-                    if (window.location.protocol !== 'file:') try {
-                        const apiRes = await fetch('/api/verify-edu-access', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ email })
-                        });
-                        if (apiRes.ok) {
-                            const data = await apiRes.json();
-                            if (data && data.ok && data.driveUrl) {
-                                driveUrl = data.driveUrl;
-                                verifyOk = true;
-                            }
-                        } else if (apiRes.status === 403 || apiRes.status === 400) {
-                            const data = await apiRes.json().catch(() => ({}));
-                            throw new Error(data?.error || 'not_found');
-                        }
-                    } catch (apiErr) {
-                        if (apiErr.message === 'not_found' || apiErr.message === 'drive_not_configured' || apiErr.message === 'invalid_email') {
-                            throw apiErr;
-                        }
+                        btn.disabled = true;
+                        btn.textContent = EDU_STATE.lang === 'en' ? 'Submitting...' : 'Gönderiliyor...';
                     }
 
-                    // 2. Direct Supabase RPC fallback (works in local dev or if rewrite is not active yet)
-                    if (!verifyOk) {
-                        const rpcRes = await fetch(SB_URL + "/rest/v1/rpc/verify_edu_access", {
+                    try {
+                        const res = await fetch(SB_URL + "/rest/v1/edu_submissions", {
                             method: "POST",
                             headers: {
                                 apikey: SB_KEY,
                                 Authorization: "Bearer " + SB_KEY,
-                                "Content-Type": "application/json"
+                                "Content-Type": "application/json",
+                                Prefer: "return=minimal"
                             },
-                            body: JSON.stringify({ check_email: email })
+                            body: JSON.stringify({
+                                answers,
+                                is_read: false
+                            })
                         });
 
-                        if (rpcRes.ok) {
-                            const rpcData = await rpcRes.json();
-                            if (rpcData && rpcData.success && rpcData.drive_url) {
-                                driveUrl = rpcData.drive_url;
-                                verifyOk = true;
-                            } else {
-                                throw new Error(rpcData?.error || 'not_found');
-                            }
-                        } else {
-                            const txt = await rpcRes.text();
-                            if (txt.includes('verify_edu_access') || rpcRes.status === 404) {
-                                throw new Error('rpc_missing');
-                            }
-                            throw new Error('not_found');
+                        if (!res.ok) {
+                            const errTxt = await res.text();
+                            throw new Error(errTxt || ('HTTP ' + res.status));
+                        }
+
+                        EDU_STATE.submitted = true;
+                        renderEduPage();
+                    } catch (err) {
+                        if (errEl) {
+                            errEl.textContent = EDU_STATE.lang === 'en'
+                                ? 'Could not submit application. Please try again or contact via Instagram/Email.'
+                                : 'Başvuru gönderilirken bir hata oluştu. Lütfen tekrar deneyin veya Instagram/E-posta üzerinden ulaşın.';
+                            errEl.style.display = 'block';
+                        }
+                        if (btn) {
+                            btn.disabled = false;
+                            btn.textContent = EDU_STATE.lang === 'en'
+                                ? (EDU_STATE.config.submit_en || 'Submit Application ↗')
+                                : (EDU_STATE.config.submit_tr || 'Başvuruyu Gönder ↗');
                         }
                     }
+                }
+            });
 
-                    if (verifyOk && driveUrl) {
-                        setDriveStatus('success', `
+            // Drive Access Modal Logic
+            const driveModal = document.getElementById('eduDriveModal');
+            const openDriveBtn = document.getElementById('openEduDriveModalBtn');
+            const closeDriveBtn = document.getElementById('closeEduDriveModalBtn');
+            const driveForm = document.getElementById('eduDriveAuthForm');
+            const driveEmailInp = document.getElementById('eduDriveEmailInput');
+            const driveStatus = document.getElementById('eduDriveStatus');
+            const driveSubmitBtn = document.getElementById('eduDriveSubmitBtn');
+            const driveSubmitTxt = document.getElementById('eduDriveSubmitBtnTxt');
+
+            function setDriveStatus(type, htmlContent) {
+                if (!driveStatus) return;
+                if (!type) {
+                    driveStatus.className = 'edu-modal-status';
+                    driveStatus.style.display = 'none';
+                    driveStatus.innerHTML = '';
+                    return;
+                }
+                driveStatus.className = 'edu-modal-status';
+                void driveStatus.offsetWidth;
+                driveStatus.className = 'edu-modal-status ' + type;
+                driveStatus.style.display = 'block';
+                driveStatus.innerHTML = htmlContent;
+            }
+
+            function triggerDriveInputError() {
+                if (!driveEmailInp) return;
+                driveEmailInp.classList.remove('edu-inp-error');
+                void driveEmailInp.offsetWidth;
+                driveEmailInp.classList.add('edu-inp-error');
+            }
+
+            if (driveEmailInp) {
+                driveEmailInp.addEventListener('input', () => {
+                    driveEmailInp.classList.remove('edu-inp-error');
+                });
+            }
+
+            function openEduModal() {
+                if (!driveModal) return;
+                driveModal.classList.add('open');
+                driveModal.setAttribute('aria-hidden', 'false');
+                setDriveStatus('', '');
+                if (driveEmailInp) driveEmailInp.classList.remove('edu-inp-error');
+                if (driveSubmitBtn) {
+                    driveSubmitBtn.disabled = false;
+                    driveSubmitBtn.style.display = '';
+                }
+                if (driveEmailInp) {
+                    setTimeout(() => driveEmailInp.focus(), 80);
+                }
+            }
+
+            function closeEduModal() {
+                if (!driveModal) return;
+                driveModal.classList.remove('open');
+                driveModal.setAttribute('aria-hidden', 'true');
+            }
+
+            if (openDriveBtn) openDriveBtn.addEventListener('click', openEduModal);
+            if (closeDriveBtn) closeDriveBtn.addEventListener('click', closeEduModal);
+
+            if (driveModal) {
+                driveModal.addEventListener('click', e => {
+                    if (e.target === driveModal) closeEduModal();
+                });
+            }
+
+            document.addEventListener('keydown', e => {
+                if (e.key === 'Escape' && driveModal && driveModal.classList.contains('open')) {
+                    closeEduModal();
+                }
+            });
+
+            if (driveForm) {
+                driveForm.addEventListener('submit', async e => {
+                    e.preventDefault();
+                    const isEn = EDU_STATE.lang === 'en';
+                    const email = String(driveEmailInp?.value || '').trim().toLowerCase();
+
+                    if (!email || !email.includes('@') || email.length < 5) {
+                        triggerDriveInputError();
+                        setDriveStatus('error', isEn
+                            ? '<b>⚠️ Invalid Email</b><div style="margin-top:4px">Please enter a valid email address.</div>'
+                            : '<b>⚠️ Geçersiz E-posta</b><div style="margin-top:4px">Lütfen geçerli bir e-posta adresi girin.</div>'
+                        );
+                        return;
+                    }
+
+                    if (driveEmailInp) driveEmailInp.classList.remove('edu-inp-error');
+                    if (driveSubmitBtn) driveSubmitBtn.disabled = true;
+                    if (driveSubmitTxt) driveSubmitTxt.textContent = isEn ? 'Verifying...' : 'Doğrulanıyor...';
+                    setDriveStatus('loading', isEn
+                        ? '⏳ Checking your enrollment...'
+                        : '⏳ Erişim yetkiniz kontrol ediliyor...'
+                    );
+
+                    try {
+                        let driveUrl = '';
+                        let verifyOk = false;
+
+                        // 1. Try serverless API endpoint
+                        if (window.location.protocol !== 'file:') try {
+                            const apiRes = await fetch('/api/verify-edu-access', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ email })
+                            });
+                            if (apiRes.ok) {
+                                const data = await apiRes.json();
+                                if (data && data.ok && data.driveUrl) {
+                                    driveUrl = data.driveUrl;
+                                    verifyOk = true;
+                                }
+                            } else if (apiRes.status === 403 || apiRes.status === 400) {
+                                const data = await apiRes.json().catch(() => ({}));
+                                throw new Error(data?.error || 'not_found');
+                            }
+                        } catch (apiErr) {
+                            if (apiErr.message === 'not_found' || apiErr.message === 'drive_not_configured' || apiErr.message === 'invalid_email') {
+                                throw apiErr;
+                            }
+                        }
+
+                        // 2. Direct Google Apps Script live Drive folder check (if configured)
+                        if (!verifyOk) {
+                            const scriptUrl = String(EDU_STATE.config?.apps_script_url || '').trim();
+                            const cfgDriveUrl = String(EDU_STATE.config?.drive_url || '').trim();
+                            const m1 = cfgDriveUrl.match(/\/folders\/([a-zA-Z0-9_-]{15,})/);
+                            const m2 = cfgDriveUrl.match(/[?&]id=([a-zA-Z0-9_-]{15,})/);
+                            const folderId = m1 ? m1[1] : (m2 ? m2[1] : '');
+                            if (scriptUrl && scriptUrl.startsWith('https://script.google.com/') && folderId) {
+                                try {
+                                    const sep = scriptUrl.includes('?') ? '&' : '?';
+                                    const gasRes = await fetch(`${scriptUrl}${sep}folderId=${encodeURIComponent(folderId)}&email=${encodeURIComponent(email)}`, {
+                                        method: 'GET',
+                                        redirect: 'follow'
+                                    });
+                                    if (gasRes.ok) {
+                                        const gasData = await gasRes.json().catch(() => null);
+                                        if (gasData && gasData.ok && gasData.allowed) {
+                                            driveUrl = cfgDriveUrl || gasData.driveUrl || `https://drive.google.com/drive/folders/${folderId}`;
+                                            verifyOk = true;
+                                        }
+                                    }
+                                } catch (_) { }
+                            }
+                        }
+
+                        // 3. Direct Supabase RPC fallback (works in local dev or if rewrite is not active yet)
+                        if (!verifyOk) {
+                            const rpcRes = await fetch(SB_URL + "/rest/v1/rpc/verify_edu_access", {
+                                method: "POST",
+                                headers: {
+                                    apikey: SB_KEY,
+                                    Authorization: "Bearer " + SB_KEY,
+                                    "Content-Type": "application/json"
+                                },
+                                body: JSON.stringify({ check_email: email })
+                            });
+
+                            if (rpcRes.ok) {
+                                const rpcData = await rpcRes.json();
+                                if (rpcData && rpcData.success && rpcData.drive_url) {
+                                    driveUrl = rpcData.drive_url;
+                                    verifyOk = true;
+                                } else {
+                                    throw new Error(rpcData?.error || 'not_found');
+                                }
+                            } else {
+                                const txt = await rpcRes.text();
+                                if (txt.includes('verify_edu_access') || rpcRes.status === 404) {
+                                    throw new Error('rpc_missing');
+                                }
+                                throw new Error('not_found');
+                            }
+                        }
+
+                        if (verifyOk && driveUrl) {
+                            setDriveStatus('success', `
                             <div><b>${isEn ? 'Access verified! ✓' : 'Erişim doğrulandı! ✓'}</b></div>
                             <div style="margin-top:4px;font-size:12px">${isEn ? 'Opening Google Drive...' : 'Google Drive açılıyor...'}</div>
                             <a href="${esc(driveUrl)}" target="_blank" rel="noopener" class="edu-submit-btn" style="margin-top:10px;display:inline-flex;text-decoration:none;font-size:13px;padding:10px 18px;justify-content:center">
                                 ${isEn ? 'Open Drive Folder ↗' : 'Drive Klasörünü Aç ↗'}
                             </a>
                         `);
-                        if (driveSubmitBtn) driveSubmitBtn.style.display = 'none';
+                            if (driveSubmitBtn) driveSubmitBtn.style.display = 'none';
 
-                        window.open(driveUrl, '_blank');
-                    } else {
-                        throw new Error('not_found');
+                            window.open(driveUrl, '_blank');
+                        } else {
+                            throw new Error('not_found');
+                        }
+                    } catch (err) {
+                        if (driveSubmitBtn) {
+                            driveSubmitBtn.disabled = false;
+                            driveSubmitBtn.style.display = '';
+                        }
+                        if (driveSubmitTxt) driveSubmitTxt.textContent = isEn ? 'Verify & Open Archive ↗' : 'Doğrula ve Arşive Git ↗';
+
+                        triggerDriveInputError();
+
+                        let errHtml = '';
+                        if (err.message === 'not_found' || err.message === 'empty_email') {
+                            errHtml = isEn
+                                ? `<b>❌ Unrecognized Email Address</b><div style="margin-top:4px">No active enrollment was found for <b>${esc(email)}</b>. Please check for typos or contact your instructor.</div>`
+                                : `<b>❌ Kayıtlı E-posta Bulunamadı</b><div style="margin-top:4px">Girdiğiniz <b>${esc(email)}</b> adresine tanımlı aktif bir eğitim kaydı bulunamadı. Lütfen adresi doğru yazdığınızdan emin olun veya bizimle iletişime geçin.</div>`;
+                        } else if (err.message === 'invalid_email') {
+                            errHtml = isEn
+                                ? `<b>⚠️ Invalid Email</b><div style="margin-top:4px">Please enter a valid email address.</div>`
+                                : `<b>⚠️ Geçersiz E-posta</b><div style="margin-top:4px">Lütfen geçerli bir e-posta adresi girin.</div>`;
+                        } else if (err.message === 'drive_not_configured') {
+                            errHtml = isEn
+                                ? `<b>⚠️ Archive Link Not Set</b><div style="margin-top:4px">Your email is verified, but the Drive folder link is currently being updated by the instructor.</div>`
+                                : `<b>⚠️ Arşiv Linki Henüz Eklenmemiş</b><div style="margin-top:4px">E-posta adresiniz doğrulandı ancak Drive klasör linki henüz yönetici tarafından eklenmemiş.</div>`;
+                        } else if (err.message === 'rpc_missing') {
+                            errHtml = isEn
+                                ? `<b>⚠️ Setup Required</b><div style="margin-top:4px">Database setup is required. Please ask the administrator to configure the access table.</div>`
+                                : `<b>⚠️ Kurulum Gerekli</b><div style="margin-top:4px">Veritabanı kurulumu henüz tamamlanmamış. Lütfen yöneticinin SQL kurulumunu yapmasını sağlayın.</div>`;
+                        } else {
+                            errHtml = isEn
+                                ? `<b>⚠️ Verification Error</b><div style="margin-top:4px">A temporary connection error occurred. Please try again.</div>`
+                                : `<b>⚠️ Bağlantı Hatası</b><div style="margin-top:4px">Doğrulama sırasında geçici bir hata oluştu. Lütfen tekrar deneyin.</div>`;
+                        }
+
+                        setDriveStatus('error', errHtml);
                     }
-                } catch (err) {
-                    if (driveSubmitBtn) {
-                        driveSubmitBtn.disabled = false;
-                        driveSubmitBtn.style.display = '';
-                    }
-                    if (driveSubmitTxt) driveSubmitTxt.textContent = isEn ? 'Verify & Open Archive ↗' : 'Doğrula ve Arşive Git ↗';
-
-                    triggerDriveInputError();
-
-                    let errHtml = '';
-                    if (err.message === 'not_found' || err.message === 'empty_email') {
-                        errHtml = isEn
-                            ? `<b>❌ Unrecognized Email Address</b><div style="margin-top:4px">No active enrollment was found for <b>${esc(email)}</b>. Please check for typos or contact your instructor.</div>`
-                            : `<b>❌ Kayıtlı E-posta Bulunamadı</b><div style="margin-top:4px">Girdiğiniz <b>${esc(email)}</b> adresine tanımlı aktif bir eğitim kaydı bulunamadı. Lütfen adresi doğru yazdığınızdan emin olun veya bizimle iletişime geçin.</div>`;
-                    } else if (err.message === 'invalid_email') {
-                        errHtml = isEn
-                            ? `<b>⚠️ Invalid Email</b><div style="margin-top:4px">Please enter a valid email address.</div>`
-                            : `<b>⚠️ Geçersiz E-posta</b><div style="margin-top:4px">Lütfen geçerli bir e-posta adresi girin.</div>`;
-                    } else if (err.message === 'drive_not_configured') {
-                        errHtml = isEn
-                            ? `<b>⚠️ Archive Link Not Set</b><div style="margin-top:4px">Your email is verified, but the Drive folder link is currently being updated by the instructor.</div>`
-                            : `<b>⚠️ Arşiv Linki Henüz Eklenmemiş</b><div style="margin-top:4px">E-posta adresiniz doğrulandı ancak Drive klasör linki henüz yönetici tarafından eklenmemiş.</div>`;
-                    } else if (err.message === 'rpc_missing') {
-                        errHtml = isEn
-                            ? `<b>⚠️ Setup Required</b><div style="margin-top:4px">Database setup is required. Please ask the administrator to configure the access table.</div>`
-                            : `<b>⚠️ Kurulum Gerekli</b><div style="margin-top:4px">Veritabanı kurulumu henüz tamamlanmamış. Lütfen yöneticinin SQL kurulumunu yapmasını sağlayın.</div>`;
-                    } else {
-                        errHtml = isEn
-                            ? `<b>⚠️ Verification Error</b><div style="margin-top:4px">A temporary connection error occurred. Please try again.</div>`
-                            : `<b>⚠️ Bağlantı Hatası</b><div style="margin-top:4px">Doğrulama sırasında geçici bir hata oluştu. Lütfen tekrar deneyin.</div>`;
-                    }
-
-                    setDriveStatus('error', errHtml);
-                }
-            });
-        }
-        window.applyEduSettings = applyEduSettings;
-    })();
+                });
+            }
+            window.applyEduSettings = applyEduSettings;
+        })();
     </script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="script.js?v=20"></script>
+    <script src="script.js?v=21"></script>
     <script>
         window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
     </script>
