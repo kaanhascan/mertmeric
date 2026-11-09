@@ -2793,32 +2793,47 @@ textarea.edu-inp {
 
 .edu-modal-status {
     font-size: 12.5px;
-    line-height: 1.45;
-    padding: 10px 12px;
-    border-radius: 12px;
+    line-height: 1.5;
+    padding: 12px 14px;
+    border-radius: 14px;
     text-align: center;
     display: none;
 }
 
 .edu-modal-status.error {
-    display: block;
-    background: rgba(255, 69, 58, .16);
-    border: 1px solid rgba(255, 69, 58, .45);
-    color: #ff6961;
+    display: block !important;
+    background: rgba(255, 69, 58, .18);
+    border: 1px solid rgba(255, 69, 58, .55);
+    color: #ff8078;
+    box-shadow: 0 8px 24px rgba(255, 69, 58, .15);
+    animation: eduShake .36s cubic-bezier(.36, .07, .19, .97) both;
 }
 
 .edu-modal-status.success {
-    display: block;
-    background: rgba(48, 209, 88, .16);
-    border: 1px solid rgba(48, 209, 88, .45);
+    display: block !important;
+    background: rgba(48, 209, 88, .18);
+    border: 1px solid rgba(48, 209, 88, .5);
     color: #32d74b;
 }
 
 .edu-modal-status.loading {
-    display: block;
-    background: rgba(10, 132, 255, .16);
-    border: 1px solid rgba(10, 132, 255, .45);
+    display: block !important;
+    background: rgba(10, 132, 255, .18);
+    border: 1px solid rgba(10, 132, 255, .5);
     color: #70b4ff;
+}
+
+.edu-inp.edu-inp-error {
+    border-color: rgba(255, 69, 58, .85) !important;
+    box-shadow: 0 0 0 3px rgba(255, 69, 58, .22) !important;
+    animation: eduShake .36s cubic-bezier(.36, .07, .19, .97) both;
+}
+
+@keyframes eduShake {
+    10%, 90% { transform: translateX(-2px); }
+    20%, 80% { transform: translateX(4px); }
+    30%, 50%, 70% { transform: translateX(-6px); }
+    40%, 60% { transform: translateX(6px); }
 }
 
 @media (max-width: 600px) {

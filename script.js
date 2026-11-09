@@ -66,6 +66,7 @@ const SITE = {
     eduConfig: {
         enabled: true,
         applications_open: true,
+        portal_open: true,
         closed_msg_tr: "Bu dönem için eğitim başvurularımız tamamlanmıştır. Yeni dönem duyuruları için takipte kalın veya doğrudan iletişime geçin.",
         closed_msg_en: "Applications for this term are now closed. Follow for updates or contact us directly.",
         btn_tr: "DJ Eğitimi ↗",
@@ -1640,7 +1641,7 @@ const APPS = {
                         <div class="adm-sec">
                             <h4>2. Eğitim Butonu & Başvuru Durumu Ayarları</h4>
 
-                            <div style="padding:14px 16px;border-radius:14px;background:${ec.applications_open !== false ? 'rgba(48,209,88,.08)' : 'rgba(255,69,58,.08)'};border:1px solid ${ec.applications_open !== false ? 'rgba(48,209,88,.35)' : 'rgba(255,69,58,.35)'};margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;transition:all .2s ease">
+                            <div style="padding:14px 16px;border-radius:14px;background:${ec.applications_open !== false ? 'rgba(48,209,88,.08)' : 'rgba(255,69,58,.08)'};border:1px solid ${ec.applications_open !== false ? 'rgba(48,209,88,.35)' : 'rgba(255,69,58,.35)'};margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;transition:all .2s ease">
                                 <div>
                                     <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
                                         <b style="font-size:13px;color:#fff">Başvuru Formu Durumu:</b>
@@ -1654,6 +1655,23 @@ const APPS = {
                                 </div>
                                 <button type="button" class="btn-pill ${ec.applications_open !== false ? '' : 'active'}" id="admToggleFormStatusBtn" style="padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer">
                                     ${ec.applications_open !== false ? '⛔ Başvuruları Kapat' : '✅ Başvuruları Tekrar Aç'}
+                                </button>
+                            </div>
+
+                            <div style="padding:14px 16px;border-radius:14px;background:${ec.portal_open !== false ? 'rgba(10,132,255,.08)' : 'rgba(255,69,58,.08)'};border:1px solid ${ec.portal_open !== false ? 'rgba(10,132,255,.35)' : 'rgba(255,69,58,.35)'};margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;transition:all .2s ease">
+                                <div>
+                                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+                                        <b style="font-size:13px;color:#fff">Eğitim Arşivi (Drive) Kartı:</b>
+                                        <span class="adm-badge-pill ${ec.portal_open !== false ? 'open' : 'closed'}">
+                                            ${ec.portal_open !== false ? '● ARŞİV GİRİŞİ AÇIK' : '○ ARŞİV GİRİŞİ GİZLİ'}
+                                        </span>
+                                    </div>
+                                    <span style="font-size:11.5px;color:rgba(255,255,255,.72)">
+                                        ${ec.portal_open !== false ? 'Kayıtlı öğrenciler için Drive Arşivi kutusu şu an GÖRÜNÜR' : 'Kayıtlı öğrenciler için Drive Arşivi kutusu şu an GİZLİ'}
+                                    </span>
+                                </div>
+                                <button type="button" class="btn-pill adm-toggle-portal-btn ${ec.portal_open !== false ? '' : 'active'}" style="padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer">
+                                    ${ec.portal_open !== false ? '⛔ Arşiv Kısmını Kapat' : '✅ Arşiv Kısmını Aç'}
                                 </button>
                             </div>
 
@@ -1770,6 +1788,18 @@ const APPS = {
                                     </div>
                                 </div>
                             ` : ''}
+
+                            <div style="padding:12px 14px;border-radius:12px;background:${ec.portal_open !== false ? 'rgba(10,132,255,.08)' : 'rgba(255,69,58,.08)'};border:1px solid ${ec.portal_open !== false ? 'rgba(10,132,255,.35)' : 'rgba(255,69,58,.35)'};margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+                                <div style="font-size:12px;color:#fff">
+                                    <b>Eğitim Arşivi (Drive) Kartı:</b>
+                                    <span class="adm-badge-pill ${ec.portal_open !== false ? 'open' : 'closed'}" style="margin-left:6px">
+                                        ${ec.portal_open !== false ? '● AÇIK' : '○ KAPALI'}
+                                    </span>
+                                </div>
+                                <button type="button" class="btn-pill adm-toggle-portal-btn ${ec.portal_open !== false ? '' : 'active'}" style="padding:6px 14px;font-size:11.5px;font-weight:700;cursor:pointer">
+                                    ${ec.portal_open !== false ? '⛔ Arşiv Kısmını Kapat' : '✅ Arşiv Kısmını Aç'}
+                                </button>
+                            </div>
 
                             <div class="form-group" style="margin-bottom:14px">
                                 <label style="font-size:11.5px;color:rgba(255,255,255,.75);display:block;margin-bottom:4px">Google Drive Klasör Linki (Sadece yetkili öğrencilere açılır)</label>
@@ -2300,6 +2330,7 @@ const APPS = {
                     const ec = SITE.eduConfig;
                     ec.enabled = Boolean(w.querySelector('#admEduEnabled')?.checked);
                     ec.applications_open = SITE.eduConfig.applications_open !== false;
+                    ec.portal_open = SITE.eduConfig.portal_open !== false;
                     ec.closed_msg_tr = w.querySelector('#admEduClosedMsgTr')?.value.trim() || '';
                     ec.closed_msg_en = w.querySelector('#admEduClosedMsgEn')?.value.trim() || '';
                     ec.btn_tr = w.querySelector('#admEduBtnTr')?.value.trim() || 'DJ Eğitimi ↗';
@@ -2371,6 +2402,47 @@ const APPS = {
                         }
                     };
                 }
+
+                w.querySelectorAll('.adm-toggle-portal-btn').forEach(btn => {
+                    btn.onclick = async () => {
+                        syncDomToEduConfig();
+                        const currentPortalOpen = SITE.eduConfig.portal_open !== false;
+                        const nextPortalOpen = !currentPortalOpen;
+                        SITE.eduConfig.portal_open = nextPortalOpen;
+
+                        btn.textContent = 'Güncelleniyor...';
+                        btn.disabled = true;
+
+                        const { data: savedRow, error } = await sb.from('site_settings').upsert({
+                            id: 1,
+                            dock_icons: buildDockIconsPayload()
+                        }, { onConflict: 'id' }).select().single();
+
+                        if (error) {
+                            SITE.eduConfig.portal_open = currentPortalOpen;
+                            alert('Hata: ' + error.message);
+                            refresh();
+                            return;
+                        }
+
+                        if (savedRow) {
+                            applySettingsObject(savedRow);
+                            try {
+                                localStorage.setItem('mert_cloud_settings_v2', JSON.stringify(savedRow));
+                            } catch (_) { }
+                        }
+                        applyMedia();
+                        refresh();
+
+                        const sEl = w.querySelector('#admEduStatus');
+                        if (sEl) {
+                            sEl.textContent = nextPortalOpen
+                                ? '✅ Eğitim Arşivi (Drive) kartı AÇILDI'
+                                : '⛔ Eğitim Arşivi (Drive) kartı KAPATILDI (Sayfadan gizlendi)';
+                            sEl.classList.add('on');
+                        }
+                    };
+                });
 
                 const addQBtn = w.querySelector('#admAddEduQBtn');
                 if (addQBtn) {

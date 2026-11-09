@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://gjbvypvyikrwicdfhler.supabase.co" crossorigin>
     <link rel="preconnect" href="https://fonts.cdnfonts.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.cdnfonts.com/css/sf-pro-display" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="style.css?v=19">
+    <link rel="stylesheet" href="style.css?v=20">
 </head>
 
 <body class="bio-page-body">
@@ -188,6 +188,7 @@
             config: {
                 enabled: true,
                 applications_open: true,
+                portal_open: true,
                 closed_msg_tr: "Bu dönem için eğitim başvurularımız tamamlanmıştır. Yeni dönem duyuruları için takipte kalın veya doğrudan iletişime geçin.",
                 closed_msg_en: "Applications for this term are now closed. Follow for updates or contact us directly.",
                 badge_tr: "Prodüksiyon Eğitimi",
@@ -264,6 +265,17 @@
             }
 
             const pBadge = document.getElementById('eduPortalBadge');
+            const portalCard = document.getElementById('eduPortalCard');
+            if (portalCard) {
+                portalCard.style.display = cfg.portal_open === false ? 'none' : '';
+            }
+            if (cfg.portal_open === false) {
+                const dm = document.getElementById('eduDriveModal');
+                if (dm) {
+                    dm.classList.remove('open');
+                    dm.setAttribute('aria-hidden', 'true');
+                }
+            }
             if (pBadge) pBadge.innerHTML = `<svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg> ${isEn ? 'Student Portal' : 'Öğrenci Portalı'}`;
             const pTitle = document.getElementById('eduPortalTitle');
             if (pTitle) pTitle.textContent = isEn ? 'Drive Archive for Enrolled Students' : 'Kayıtlı Öğrenciler İçin Drive Arşivi';
@@ -618,16 +630,44 @@
         const driveSubmitBtn = document.getElementById('eduDriveSubmitBtn');
         const driveSubmitTxt = document.getElementById('eduDriveSubmitBtnTxt');
 
+        function setDriveStatus(type, htmlContent) {
+            if (!driveStatus) return;
+            if (!type) {
+                driveStatus.className = 'edu-modal-status';
+                driveStatus.style.display = 'none';
+                driveStatus.innerHTML = '';
+                return;
+            }
+            driveStatus.className = 'edu-modal-status';
+            void driveStatus.offsetWidth;
+            driveStatus.className = 'edu-modal-status ' + type;
+            driveStatus.style.display = 'block';
+            driveStatus.innerHTML = htmlContent;
+        }
+
+        function triggerDriveInputError() {
+            if (!driveEmailInp) return;
+            driveEmailInp.classList.remove('edu-inp-error');
+            void driveEmailInp.offsetWidth;
+            driveEmailInp.classList.add('edu-inp-error');
+        }
+
+        if (driveEmailInp) {
+            driveEmailInp.addEventListener('input', () => {
+                driveEmailInp.classList.remove('edu-inp-error');
+            });
+        }
+
         function openEduModal() {
             if (!driveModal) return;
             driveModal.classList.add('open');
             driveModal.setAttribute('aria-hidden', 'false');
-            if (driveStatus) {
-                driveStatus.className = 'edu-modal-status';
-                driveStatus.style.display = 'none';
-                driveStatus.innerHTML = '';
+            setDriveStatus('', '');
+            if (driveEmailInp) driveEmailInp.classList.remove('edu-inp-error');
+            if (driveSubmitBtn) {
+                driveSubmitBtn.disabled = false;
+                driveSubmitBtn.style.display = '';
             }
-            if (driveSubmitBtn) driveSubmitBtn.style.display = '';
             if (driveEmailInp) {
                 setTimeout(() => driveEmailInp.focus(), 80);
             }
@@ -660,20 +700,22 @@
                 const isEn = EDU_STATE.lang === 'en';
                 const email = String(driveEmailInp?.value || '').trim().toLowerCase();
 
-                if (!email || !email.includes('@')) {
-                    if (driveStatus) {
-                        driveStatus.className = 'edu-modal-status error';
-                        driveStatus.textContent = isEn ? 'Please enter a valid email address.' : 'Lütfen geçerli bir e-posta adresi girin.';
-                    }
+                if (!email || !email.includes('@') || email.length < 5) {
+                    triggerDriveInputError();
+                    setDriveStatus('error', isEn
+                        ? '<b>⚠️ Invalid Email</b><div style="margin-top:4px">Please enter a valid email address.</div>'
+                        : '<b>⚠️ Geçersiz E-posta</b><div style="margin-top:4px">Lütfen geçerli bir e-posta adresi girin.</div>'
+                    );
                     return;
                 }
 
+                if (driveEmailInp) driveEmailInp.classList.remove('edu-inp-error');
                 if (driveSubmitBtn) driveSubmitBtn.disabled = true;
                 if (driveSubmitTxt) driveSubmitTxt.textContent = isEn ? 'Verifying...' : 'Doğrulanıyor...';
-                if (driveStatus) {
-                    driveStatus.className = 'edu-modal-status loading';
-                    driveStatus.textContent = isEn ? 'Checking your enrollment...' : 'Erişim yetkiniz kontrol ediliyor...';
-                }
+                setDriveStatus('loading', isEn
+                    ? '⏳ Checking your enrollment...'
+                    : '⏳ Erişim yetkiniz kontrol ediliyor...'
+                );
 
                 try {
                     let driveUrl = '';
@@ -692,12 +734,12 @@
                                 driveUrl = data.driveUrl;
                                 verifyOk = true;
                             }
-                        } else if (apiRes.status === 403) {
+                        } else if (apiRes.status === 403 || apiRes.status === 400) {
                             const data = await apiRes.json().catch(() => ({}));
                             throw new Error(data?.error || 'not_found');
                         }
                     } catch (apiErr) {
-                        if (apiErr.message === 'not_found' || apiErr.message === 'drive_not_configured') {
+                        if (apiErr.message === 'not_found' || apiErr.message === 'drive_not_configured' || apiErr.message === 'invalid_email') {
                             throw apiErr;
                         }
                     }
@@ -732,16 +774,13 @@
                     }
 
                     if (verifyOk && driveUrl) {
-                        if (driveStatus) {
-                            driveStatus.className = 'edu-modal-status success';
-                            driveStatus.innerHTML = `
-                                <div><b>${isEn ? 'Access verified! ✓' : 'Erişim doğrulandı! ✓'}</b></div>
-                                <div style="margin-top:4px;font-size:12px">${isEn ? 'Opening Google Drive...' : 'Google Drive açılıyor...'}</div>
-                                <a href="${esc(driveUrl)}" target="_blank" rel="noopener" class="edu-submit-btn" style="margin-top:10px;display:inline-flex;text-decoration:none;font-size:13px;padding:10px 18px;justify-content:center">
-                                    ${isEn ? 'Open Drive Folder ↗' : 'Drive Klasörünü Aç ↗'}
-                                </a>
-                            `;
-                        }
+                        setDriveStatus('success', `
+                            <div><b>${isEn ? 'Access verified! ✓' : 'Erişim doğrulandı! ✓'}</b></div>
+                            <div style="margin-top:4px;font-size:12px">${isEn ? 'Opening Google Drive...' : 'Google Drive açılıyor...'}</div>
+                            <a href="${esc(driveUrl)}" target="_blank" rel="noopener" class="edu-submit-btn" style="margin-top:10px;display:inline-flex;text-decoration:none;font-size:13px;padding:10px 18px;justify-content:center">
+                                ${isEn ? 'Open Drive Folder ↗' : 'Drive Klasörünü Aç ↗'}
+                            </a>
+                        `);
                         if (driveSubmitBtn) driveSubmitBtn.style.display = 'none';
 
                         window.open(driveUrl, '_blank');
@@ -755,29 +794,32 @@
                     }
                     if (driveSubmitTxt) driveSubmitTxt.textContent = isEn ? 'Verify & Open Archive ↗' : 'Doğrula ve Arşive Git ↗';
 
-                    let msg = '';
-                    if (err.message === 'not_found') {
-                        msg = isEn
-                            ? 'No active enrollment found for this email. Please check your spelling or contact your instructor.'
-                            : 'Bu e-posta adresine ait aktif bir eğitim kaydı bulunamadı. Lütfen kontrol edip tekrar deneyin veya bizimle iletişime geçin.';
+                    triggerDriveInputError();
+
+                    let errHtml = '';
+                    if (err.message === 'not_found' || err.message === 'empty_email') {
+                        errHtml = isEn
+                            ? `<b>❌ Unrecognized Email Address</b><div style="margin-top:4px">No active enrollment was found for <b>${esc(email)}</b>. Please check for typos or contact your instructor.</div>`
+                            : `<b>❌ Kayıtlı E-posta Bulunamadı</b><div style="margin-top:4px">Girdiğiniz <b>${esc(email)}</b> adresine tanımlı aktif bir eğitim kaydı bulunamadı. Lütfen adresi doğru yazdığınızdan emin olun veya bizimle iletişime geçin.</div>`;
+                    } else if (err.message === 'invalid_email') {
+                        errHtml = isEn
+                            ? `<b>⚠️ Invalid Email</b><div style="margin-top:4px">Please enter a valid email address.</div>`
+                            : `<b>⚠️ Geçersiz E-posta</b><div style="margin-top:4px">Lütfen geçerli bir e-posta adresi girin.</div>`;
                     } else if (err.message === 'drive_not_configured') {
-                        msg = isEn
-                            ? 'The Drive folder link is currently being updated. Please contact the administrator.'
-                            : 'Drive arşivi linki henüz sisteme eklenmemiş veya güncelleniyor. Lütfen yöneticiyle iletişime geçin.';
+                        errHtml = isEn
+                            ? `<b>⚠️ Archive Link Not Set</b><div style="margin-top:4px">Your email is verified, but the Drive folder link is currently being updated by the instructor.</div>`
+                            : `<b>⚠️ Arşiv Linki Henüz Eklenmemiş</b><div style="margin-top:4px">E-posta adresiniz doğrulandı ancak Drive klasör linki henüz yönetici tarafından eklenmemiş.</div>`;
                     } else if (err.message === 'rpc_missing') {
-                        msg = isEn
-                            ? 'Database setup is required. Please ask the administrator to configure the access table.'
-                            : 'Veritabanı kurulumu henüz tamamlanmamış. Lütfen yöneticinin SQL kurulumunu yapmasını sağlayın.';
+                        errHtml = isEn
+                            ? `<b>⚠️ Setup Required</b><div style="margin-top:4px">Database setup is required. Please ask the administrator to configure the access table.</div>`
+                            : `<b>⚠️ Kurulum Gerekli</b><div style="margin-top:4px">Veritabanı kurulumu henüz tamamlanmamış. Lütfen yöneticinin SQL kurulumunu yapmasını sağlayın.</div>`;
                     } else {
-                        msg = isEn
-                            ? 'A verification error occurred. Please try again later.'
-                            : 'Doğrulama sırasında bir hata oluştu. Lütfen tekrar deneyin.';
+                        errHtml = isEn
+                            ? `<b>⚠️ Verification Error</b><div style="margin-top:4px">A temporary connection error occurred. Please try again.</div>`
+                            : `<b>⚠️ Bağlantı Hatası</b><div style="margin-top:4px">Doğrulama sırasında geçici bir hata oluştu. Lütfen tekrar deneyin.</div>`;
                     }
 
-                    if (driveStatus) {
-                        driveStatus.className = 'edu-modal-status error';
-                        driveStatus.textContent = msg;
-                    }
+                    setDriveStatus('error', errHtml);
                 }
             });
         }
@@ -785,7 +827,7 @@
     })();
     </script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="script.js?v=19"></script>
+    <script src="script.js?v=20"></script>
     <script>
         window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
     </script>
